@@ -1,11 +1,12 @@
 'use strict';
 
-const keyMirror = require('keymirror');
+import keymirror from 'keymirror';
 
 module.exports = {
 
-  ActionTypes: keyMirror({
-    RECEIVE_QUOTES: null,
+  ActionTypes: keymirror({
+    THESIS_RECEIVE_PAGES: null,
+    QUOTES_RECEIVE_QUOTES: null,
   })
 
 };

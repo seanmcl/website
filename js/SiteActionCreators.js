@@ -5,9 +5,16 @@ import { ActionTypes } from './SiteConstants';
 
 module.exports = {
 
-  receiveQuotes: quotes => Dispatcher.dispatch({
-    type: ActionTypes.RECEIVE_QUOTES,
-    quotes: quotes
+  quotesReceiveQuotes: quotes => {
+    Dispatcher.dispatch({
+      type: ActionTypes.QUOTES_RECEIVE_QUOTES,
+      quotes: quotes
+    })
+  },
+
+  thesisReceivePages: pages => Dispatcher.dispatch({
+    type: ActionTypes.THESIS_RECEIVE_PAGES,
+    pages: pages
   }),
 
 };

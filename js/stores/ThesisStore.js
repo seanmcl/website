@@ -6,8 +6,8 @@ import { EventEmitter } from 'events';
 import { CHANGE_EVENT } from '../Util';
 import assign from 'object-assign';
 
-let _quotes = {
-  quotes: []
+let _state = {
+  pages: []
 };
 
 const Store = assign({}, EventEmitter.prototype, {
@@ -24,14 +24,14 @@ const Store = assign({}, EventEmitter.prototype, {
   },
 
   get() {
-    return _quotes;
+    return _state;
   }
 });
 
 Store.dispatchToken = Dispatcher.register(action => {
   switch(action.type) {
-    case ActionTypes.QUOTES_RECEIVE_QUOTES:
-      _quotes.quotes = action.quotes;
+    case ActionTypes.THESIS_RECEIVE_PAGES:
+      _state.pages = action.pages;
       Store.emitChange();
       break;
 

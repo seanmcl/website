@@ -25,21 +25,36 @@ export const hashString = str => {
 /**
  *
  */
-export const parseJsonOrJsonList = s => {
+const parseJsonOrJsonArray = s => {
   try {
     return JSON.parse(s);
   } catch (_) {
     try {
-      return JSON.parse(`[${s.trim().replace(/\n/g, ',')}]`);
+      const res = JSON.parse(`[${s.trim().replace(/\n/g, ',')}]`);
+      return res
     } catch (_) {
       throw `Can't parse as JSON: ${s}`;
     }
   }
 };
 
+/**
+ *
+ */
+const getJsonOrJsonArray = (url, success) => {
+  const success1 = text =>
+    success(parseJsonOrJsonArray(text));
+  return $.ajax({dataType: "text", url}).success(success1).error(logError);
+};
 
 /**
  *
  */
 export const getQuotes = () =>
-  $.getJSON(`/content/quotes/quotes.json`, Actions.receiveQuotes).error(logError);
+  getJsonOrJsonArray(`/content/quotes/quotes.json`, Actions.quotesReceiveQuotes);
+
+/**
+ *
+ */
+export const getThesisPages = () =>
+  getJsonOrJsonArray(`/content/thesis/pages.json`, Actions.thesisReceivePages);

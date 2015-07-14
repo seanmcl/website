@@ -3,7 +3,7 @@
 import React from 'react';
 import { PropTypes as Types } from 'react';
 import Store from '../stores/QuotesStore.js';
-import { getQuotes } from '../Util.js';
+import { getQuotes, hashString } from '../Util.js';
 
 const getStateFromStore = () => Store.get();
 
@@ -74,7 +74,7 @@ class Quotes extends React.Component {
       <div>
         <h1>My Quotes!</h1>
         <ul>
-          {this.props.quotes.map(q => <li key={q.body}><Quote {...q} /></li>)}
+          {this.props.quotes.map(q => <li key={hashString(q.body)}><Quote {...q} /></li>)}
         </ul>
       </div>
     );
