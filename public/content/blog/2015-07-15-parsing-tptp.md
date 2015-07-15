@@ -68,6 +68,7 @@ Here's an example TPTP file: AGT001+1.p
 Let's try to parse it with Leo.
 
 
+
     import leo.modules.parsers.TPTP
     import scala.io.Source
     import scala.util.parsing.input.CharArrayReader
@@ -82,9 +83,46 @@ Let's try to parse it with Leo.
                           Left(fof(query_1,conjecture,(accept_team(
                             countryamedicalorganization,countryacivilorganization,towna,n6))).))))
 
-Hmm, this is good progress, but the Axioms are still in there.  Can I get them to expand?
-    
+Hmm, this is good progress, but the Axioms are still in there.  Can I get them to expand?  After searching around, it appears the answer is no.  But the nice thing about abstract syntax is it's easy to get what you want out of it.
+Since there are 4 axioms, I'll need to call the parser on those and create the formula Ax1 ⊃ Ax2 ⊃ Ax3 ⊃ Ax4 ⊃ f.
 
+    import leo.datastructures.tptp.Commons.{FOFAnnotated, TPTPInput}
+    import leo.modules.parsers.TPTP
+    import scala.io.Source
+    import scala.util.parsing.input.CharArrayReader
+    import leo.datastructures.tptp.fof._
+
+    val tptpHome = "/tmp/TPTP-v6.1.0"
+
+    def getIncludesAndFormulas(f: String) = { // : Either[String, (List[String], List[_])] = {
+    val file = s"$tptpHome/$f"
+      TPTP.parseFile(new CharArrayReader(Source.fromFile(file).toArray)) match {
+        case Left(err) => Left(err)
+        case Right(input) => {
+          val includes = input.getIncludes.map(_._1)
+          val formulas = input.getFormulae
+          Right((includes, formulas))
+        }
+      }
+    }
+
+    def getFormula(file: String): LogicFormula = {
+      getIncludesAndFormulas(file) match {
+        case Right((includes, formulas)) => formulas match {
+          case FOFAnnotated(_, _, f, _) :: rest => f match {
+            case Logical(g) => {
+              val hyps = includes map getFormula
+              hyps.foldRight(g)((x, y) => Binary(x, Impl, y))
+            }
+          }
+        }
+      }
+    }
+
+    val f = getFormula("Problems/AGT/AGT001+1.p")
+
+`f` now has the implication I was looking for, and I can walk over it to create the data structure of my choice.
+Of course, not all TPTP problems are in the FOF format, so this little experiment will need a lot of tweaking, but it's a lot easier than writing a parser for the TPTP BNF.
 
 Thank you Leo III team!
 
