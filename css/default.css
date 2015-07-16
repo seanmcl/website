@@ -1,0 +1,4 @@
+html {
+  /* Chrome scrollbar coming and going affects page layout without this. */
+  overflow-y: scroll;
+}

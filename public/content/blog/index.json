@@ -1,4 +1,8 @@
 [
+  {"date": "2015-07-16",
+   "basename": "2015-07-16-ad-hoc-checks-with-sensu.md",
+   "title": "Ad Hoc Checks With Sensu"},
+
   {"date": "2015-07-15",
    "basename": "2015-07-15-parsing-tptp.md",
    "title": "Parsing TPTP in Scala"}
