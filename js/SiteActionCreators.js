@@ -17,4 +17,15 @@ module.exports = {
     pages: pages
   }),
 
+  blogReceiveIndex: index => Dispatcher.dispatch({
+    type: ActionTypes.BLOG_RECEIVE_INDEX,
+    index: index
+  }),
+
+  blogReceiveEntry: basename => entry => Dispatcher.dispatch({
+    type: ActionTypes.BLOG_RECEIVE_ENTRY,
+    basename: basename,
+    entry: entry
+  }),
+
 };

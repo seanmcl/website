@@ -40,11 +40,6 @@ export default class QuotesContainer extends React.Component {
  *
  */
 class Quote extends React.Component {
-  constructor() {
-    super();
-    this.state = Store.get();
-  }
-
   render() {
     return (
       <blockquote style={{maxWidth: 500}}>

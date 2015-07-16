@@ -1,19 +1,19 @@
-Parsing TPTP to Scala
+Parsing TPTP in Scala
 =====================
 
 There's an extensive library of problems for theorem provers called [TPTP](http://www.cs.miami.edu/~tptp/).  Each problem consists of a text file containing a formula in one of several formats.  The top of each file has interesting metadata about the problem, for example whether it's a theorem or not, how many symbols, etc.  The file may include other files.
 
-Parsing these files into the language of your choice is a headache.  The library provides a prolog program that can convert the TPTP format into other existing formats, but this is a purely text to text tranformation.  Parsing the language directly takes some effort.  
+Parsing these files into the language of your choice is a headache.  The library provides a prolog program that can convert the TPTP format into other existing formats, but this is a purely text to text tranformation.  Parsing the language directly takes some effort.
 
 There are a few existing parser for different languages:
 - [Ocaml](https://github.com/radekm/ocaml-tptp)
 - [Haskell](https://github.com/DanielSchuessler/logic-TPTP)
 
-This morning I was searching for a parser from TPTP to Scala.  That is, I wanted to parse TPTP files into some Scala data structure representing the abstract syntax, and then I'd write a function to convert that data structure into a form I can use.   
+This morning I was searching for a parser from TPTP to Scala.  That is, I wanted to parse TPTP files into some Scala data structure representing the abstract syntax, and then I'd write a function to convert that data structure into a form I can use.
 
 I first looked at [Warthog](https://github.com/warthog-logic/warthog), which seems to have some TPTP parsing facility.  I found the datastructure stack overly complicated, and my timebox alert went off after 20 minutes or so at trying to figure out how to read in a TPTP file.  It was also not clear they handle include statements.
 
-Next I tried [LeoPARD]().  Looking in the test suite, I found a [test case with an include statement](https://github.com/cbenzmueller/LeoPARD/blob/eff09b58d3ee845e252edde27c3cae546bc351a0/src/test/resources/problems/SYN000%2B2.p)!.  
+Next I tried [LeoPARD]().  Looking in the test suite, I found a [test case with an include statement](https://github.com/cbenzmueller/LeoPARD/blob/eff09b58d3ee845e252edde27c3cae546bc351a0/src/test/resources/problems/SYN000%2B2.p)!.
 
 Here's an example TPTP file: AGT001+1.p
 
@@ -75,11 +75,11 @@ Let's try to parse it with Leo.
     val file = "/tmp/TPTP-v6.1.0/Problems/AGT/AGT001+1.p"
     val x = TPTP.parseFile(new CharArrayReader(Source.fromFile(file).toArray))
 
-    x: Either[String,leo.datastructures.tptp.Commons.TPTPInput] = 
-      Right(TPTPInput(List(Right((Axioms/AGT001+0.ax,List())), 
-                           Right((Axioms/AGT001+1.ax,List())), 
-                           Right((Axioms/NUM005+0.ax,List())), 
-                           Right((Axioms/NUM005+1.ax,List())), 
+    x: Either[String,leo.datastructures.tptp.Commons.TPTPInput] =
+      Right(TPTPInput(List(Right((Axioms/AGT001+0.ax,List())),
+                           Right((Axioms/AGT001+1.ax,List())),
+                           Right((Axioms/NUM005+0.ax,List())),
+                           Right((Axioms/NUM005+1.ax,List())),
                           Left(fof(query_1,conjecture,(accept_team(
                             countryamedicalorganization,countryacivilorganization,towna,n6))).))))
 
@@ -125,5 +125,3 @@ Since there are 4 axioms, I'll need to call the parser on those and create the f
 Of course, not all TPTP problems are in the FOF format, so this little experiment will need a lot of tweaking, but it's a lot easier than writing a parser for the TPTP BNF.
 
 Thank you Leo III team!
-
-

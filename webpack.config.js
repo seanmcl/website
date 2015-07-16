@@ -36,7 +36,8 @@ module.exports = {
       // Stylesheets
       { test: /\.css$/, loader: 'style-loader!css-loader' },
       { test: /\.sass$/, loader: 'style!css!sass' },
-      { test: /\.scss$/, loader: 'style!css!scss' }
+      { test: /\.scss$/, loader: 'style!css!scss' },
+
     ]
   }
 };

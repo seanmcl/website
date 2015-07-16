@@ -12,6 +12,7 @@ export default class SiteNavbar extends React.Component {
     return (
       <Navbar className='navbar navbar-inverse' brand='Home'>
         <Nav bsStyle="pills">
+          <NavItemLink to='/blog'>Blog</NavItemLink>
           <NavItemLink to='/quotes'>Quotes</NavItemLink>
           <NavItemLink to='/thesis'>Thesis</NavItemLink>
         </Nav>

@@ -50,6 +50,13 @@ const getJsonOrJsonArray = (url, success) => {
 /**
  *
  */
+const getText = (url, success) => {
+  return $.ajax({dataType: "text", url, success}).error(logError);
+};
+
+/**
+ *
+ */
 export const getQuotes = () =>
   getJsonOrJsonArray(`/content/quotes/quotes.json`, Actions.quotesReceiveQuotes);
 
@@ -58,3 +65,18 @@ export const getQuotes = () =>
  */
 export const getThesisPages = () =>
   getJsonOrJsonArray(`/content/thesis/pages.json`, Actions.thesisReceivePages);
+
+/**
+ *
+ */
+export const getBlogIndex = () =>
+  getJsonOrJsonArray(`/content/blog/index.json`, Actions.blogReceiveIndex);
+
+/**
+ *
+ */
+export const getBlogEntry = basename => {
+  if (basename) {
+    getText(`/content/blog/${basename}`, Actions.blogReceiveEntry(basename));
+  }
+}
