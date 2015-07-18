@@ -1,4 +1,8 @@
 [
+  {"date": "2015-07-18",
+   "basename": "2015-07-18-flux-and-jest.md",
+   "title": "Flux and Jest"},
+
   {"date": "2015-07-16",
    "basename": "2015-07-16-ad-hoc-checks-with-sensu.md",
    "title": "Ad Hoc Checks With Sensu"},
