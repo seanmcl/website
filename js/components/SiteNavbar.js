@@ -10,13 +10,16 @@ import { MenuItemLink, NavItemLink } from 'react-router-bootstrap';
 export default class SiteNavbar extends React.Component {
   render() {
     return (
-      <Navbar className='navbar navbar-inverse' brand='Home'>
-        <Nav bsStyle="pills">
-          <NavItemLink to='/blog'>Blog</NavItemLink>
-          <NavItemLink to='/quotes'>Quotes</NavItemLink>
+      <div>
+        <Navbar className='navbar'>
+          <Nav bsStyle='pills'>
+            <NavItemLink to='/blog'>Blog</NavItemLink>
+            <NavItemLink to='/quotes'>Quotes</NavItemLink>
+            <NavItemLink to='/imogen'>Imogen</NavItemLink>
           <NavItemLink to='/thesis'>Thesis</NavItemLink>
-        </Nav>
-      </Navbar>
+          </Nav>
+        </Navbar>
+      </div>
     );
   }
 }

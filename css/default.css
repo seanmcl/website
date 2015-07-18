@@ -2,3 +2,13 @@ html {
   /* Chrome scrollbar coming and going affects page layout without this. */
   overflow-y: scroll;
 }
+
+.navbar-inverse {
+  /* Fill annoying missing corner pixels. */
+  border-radius: 0px;
+}
+
+.container {
+  /* Bootstrap navbar has a huge margin without this. */
+  margin-left: 0px;
+}

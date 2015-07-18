@@ -4,3 +4,7 @@ node_modules
 .tern-port
 *.iml
 /website.old/
+/public/content/imogen/problems/ILTP-v1.1.2-firstorder
+/public/content/imogen/problems/ILTP-v1.1.2-propositional
+/public/content/imogen/problems/TPTP-v6.1.0
+/public/content/imogen/problems/index.json

@@ -9,6 +9,10 @@ module.exports = {
     QUOTES_RECEIVE_QUOTES: null,
     BLOG_RECEIVE_INDEX: null,
     BLOG_RECEIVE_ENTRY: null,
+
+    PROBLEM_BROWSER_RECEIVE_INDEX: null,
+    PROBLEM_BROWSER_RECEIVE_FILE: null,
+
   })
 
 };

@@ -2,6 +2,9 @@
 set -e -u -x -o pipefail
 trap "kill 0" SIGINT SIGTERM
 
+dir=$(readlink -f $(dirname $0))
+cd $dir/..
+
 bucket=www.seanmcl.com
 
 # Publish javascript and index file.
@@ -12,4 +15,4 @@ if (( $# > 0 )); then
 fi
 
 # Publish static content
-aws s3 sync public/content s3://$bucket/content
+s3cmd sync public/content s3://$bucket/

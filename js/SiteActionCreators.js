@@ -8,24 +8,35 @@ module.exports = {
   quotesReceiveQuotes: quotes => {
     Dispatcher.dispatch({
       type: ActionTypes.QUOTES_RECEIVE_QUOTES,
-      quotes: quotes
+      quotes
     })
   },
 
   thesisReceivePages: pages => Dispatcher.dispatch({
     type: ActionTypes.THESIS_RECEIVE_PAGES,
-    pages: pages
+    pages
   }),
 
   blogReceiveIndex: index => Dispatcher.dispatch({
     type: ActionTypes.BLOG_RECEIVE_INDEX,
-    index: index
+    index
   }),
 
   blogReceiveEntry: basename => entry => Dispatcher.dispatch({
     type: ActionTypes.BLOG_RECEIVE_ENTRY,
-    basename: basename,
-    entry: entry
+    basename,
+    entry
+  }),
+
+  problemBrowserReceiveIndex: index => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_INDEX,
+    index,
+  }),
+
+  problemBrowserReceiveFile: name => file => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_FILE,
+    name,
+    file,
   }),
 
 };

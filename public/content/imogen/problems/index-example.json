@@ -1,0 +1,56 @@
+[
+  {
+    "name": "TPTP",
+    "dir": "TPTP-v6.1.0",
+    "axioms": [
+      { "file": "AGT001+0.ax",
+        "size": 100},
+      { "file": "AGT002+0.ax",
+        "size": 55
+      }
+    ],
+    "problems": [
+      { "file": "AGT/AGT001+1.p"
+        "size": 10,
+      },
+      { "file": "AGT/AGT001+2.p"
+        "size": 10
+      }
+    ]
+  },
+
+  {
+    "name": "ILTP-propositional",
+    "dir": "ILTP-v1.1.2-propositional",
+    "axioms": [
+      {"file": "AGT001+1.p",
+        "size": 10},
+      {"file": "AGT001+2.p",
+        "size": 10},
+
+    ],
+    "problems": [
+      {"file": "LCL/LCL181+1.p",
+        "size": 10},
+      {"file": "LCL/LCL182+1.p",
+        "size": 10}
+    ]
+  },
+
+  {
+    "name": "ILTP-firstorder",
+    "dir": "ILTP-v1.1.2-firstorder",
+    "axioms": [
+      {"file": "LCL/LCL181+1.p",
+        "size": 10},
+      {"file": "LCL/LCL182+1.p",
+        "size": 10}
+    ],
+    "problems": [
+      {"file": "LCL/LCL181+1.p",
+        "size": 10},
+      {"file": "LCL/LCL182+1.p",
+        "size": 10}
+    ]
+  }
+]
