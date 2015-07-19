@@ -13,17 +13,17 @@ import assign from 'object-assign';
  * corresponds to route
  *     /imogen/problems/TPTP/Problems/AGT001+1
  */
-const makeFilePath = (problemSetDir, type, problemName) => {
-  const kind = problemName.substr(0, 3);
+const makeFilePath = (problemSetDir, type, problemFile) => {
+  const kind = problemFile.substr(0, 3);
   return type === 'axioms' ?
-    `/content/imogen/problems/${problemSetDir}/Axioms/${problemName}.ax` :
-    `/content/imogen/problems/${problemSetDir}/Problems/${kind}/${problemName}.p`;
+    `/content/imogen/problems/${problemSetDir}/Axioms/${problemFile}` :
+    `/content/imogen/problems/${problemSetDir}/Problems/${kind}/${problemFile}`;
 };
 
 /**
  *
  */
-const makeFileRoute = (problemSetName, type, problemName) => {
+export const makeFileRoute = (problemSetName, type, problemName) => {
   return `/imogen/problems/${problemSetName}/${type}/${problemName}`;
 };
 
@@ -36,7 +36,7 @@ const Problem = (problemSetName, problemSetDir) => p => (() => {
   const _fileName = p.file;
   const _problemName = _fileName.replace(/\.[^\.]*$/, '');
   const _route = makeFileRoute(problemSetName, 'problems', _problemName);
-  const _file = makeFilePath(problemSetDir, 'problems', _problemName);
+  const _file = makeFilePath(problemSetDir, 'problems', _fileName);
   const file = () => _file;
   const name = () => _problemName;
   const size = () => p.size;
@@ -57,7 +57,7 @@ const Axiom = (problemSetName, problemSetDir) => p => (() => {
   const _fileName = p.file;
   const _problemName = _fileName.replace(/\.[^\.]*$/, '');
   const _route = makeFileRoute(problemSetName, 'axioms', _problemName);
-  const _file = makeFilePath(problemSetDir, 'axioms', _problemName);
+  const _file = makeFilePath(problemSetDir, 'axioms', _fileName);
   const file = () => _file;
   const name = () => _problemName;
   const size = () => p.size;
@@ -78,8 +78,8 @@ const ProblemSet = o => (() => {
   const name = () => o.name;
   const axioms = () => _axioms;
   const problems = () => _problems;
-  const problem = name => R.find(p => p.name() === name, _problems);
-  const axiom = name => R.find(p => p.name() === name, _axioms);
+  const problem = name => R.find(p => p.name() === name)(_problems);
+  const axiom = name => R.find(p => p.name() === name)(_axioms);
   const problemOrAxiom = (type, name) => type === 'axioms' ? axiom(name) : problem(name);
   return {name, axioms, dir, problems, problemOrAxiom};
 })();
@@ -92,13 +92,7 @@ const Index = sets => (() => {
   const _obj = sets.reduce((s, o) => R.assoc(o.name, ProblemSet(o), s), {});
   const problemSetNames = () => Object.keys(_obj);
   const hasProblemSet = s => s in _obj;
-  const getProblemSet = s => {
-    if (hasProblemSet(s)) {
-      return _obj[s]
-    } else {
-      throw new TypeError
-    }
-  };
+  const getProblemSet = s => _obj[s] || null;
   const isEmpty = () => Object.keys(_obj).length === 0;
   return {problemSetNames, getProblemSet, hasProblemSet, isEmpty};
 })();

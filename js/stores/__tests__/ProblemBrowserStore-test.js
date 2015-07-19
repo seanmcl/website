@@ -90,7 +90,7 @@ describe('Index', () => {
   });
   it('getProblemSet', () => {
     expect(index.getProblemSet('TPTP').name()).toEqual('TPTP');
-    expect(() => index.getProblemSet('foo')).toThrow(err);
+    expect(index.getProblemSet('foo')).toBeNull();
   });
   it('hasProblemSet', () => {
     expect(index.hasProblemSet('TPTP')).toBe(true);

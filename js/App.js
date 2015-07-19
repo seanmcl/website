@@ -31,6 +31,7 @@ const routes =
     <Route path='imogen' handler={Imogen} />
     <Route path='imogen/problems' handler={ProblemBrowser} />
     <Route path='imogen/problems/:problemSet' handler={ProblemBrowser} />
+    <Route path='imogen/problems/:problemSet/:type' handler={ProblemBrowser} />
     <Route path='imogen/problems/:problemSet/:type/:name' handler={ProblemBrowser} />
     <Route path='quotes' handler={Quotes} />
     <Route path='thesis' handler={Thesis} />

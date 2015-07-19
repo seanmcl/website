@@ -5,11 +5,6 @@ import os
 
 def main():
     problem_sets = [
-        {'name': 'TPTP',
-         'dir': 'TPTP-v6.1.0',
-         'axioms': [],
-         'problems': []},
-
         {'name': 'ILTP-propositional',
          'dir': 'ILTP-v1.1.2-propositional',
          'axioms': [],
@@ -18,7 +13,12 @@ def main():
         {'name': 'ILTP-firstorder',
          'dir': 'ILTP-v1.1.2-firstorder',
          'axioms': [],
-         'problems': []}
+         'problems': []},
+
+        {'name': 'TPTP',
+         'dir': 'TPTP-v6.1.0',
+         'axioms': [],
+         'problems': []},
     ]
 
     def walk(obj):

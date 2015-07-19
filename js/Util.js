@@ -6,17 +6,17 @@ import Actions from './SiteActionCreators';
 const logError = e => console.log(e);
 
 export const CHANGE_EVENT = 'change';
-export const PROBLEM_MAX_SIZE = '1000';
+export const PROBLEM_MAX_SIZE = '100000';
 
-Array.prototype.last = function(){
-  return this[this.length - 1];
-};
-
-String.prototype.capitalizeFirstLetter = function() {
-  return this.charAt(0).toUpperCase() + this.slice(1);
-};
-
+/**
+ *
+ */
 export const dirname = s => s.replace(/\/[^\/]*\/?$/, '');
+
+
+/**
+ *
+ */
 export const basename = s => s.split(/[\\/]/).pop();
 
 
@@ -94,11 +94,13 @@ export const getBlogEntry = basename => {
   }
 };
 
+
 /**
  *
  */
 export const getProblemBrowserIndex = () =>
   getJsonOrJsonArray(`/content/imogen/problems/index.json`, Actions.problemBrowserReceiveIndex);
+
 
 /**
  *
