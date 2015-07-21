@@ -14,8 +14,10 @@ import Marked from 'marked';
 import R from 'ramda';
 import Highlight from 'highlight.js';
 import $ from 'jquery';
+import { Table, Column } from 'fixed-data-table';
 
-require('../../css/idea.css');
+require('../../css/third_party/idea.css');
+require('../../css/third_party/fixed-data-table.css');
 
 const MAX_PROBLEMS = 30;
 const getStateFromStore = () => Store.get();
@@ -126,7 +128,7 @@ class ProblemBrowser extends React.Component {
           </Col>
         </Row>
         <Row>
-          <Col md={2}><ProblemList problems={display} /></Col>
+          <Col md={2}><ProblemList problems={display} type={type} /></Col>
           <Col md={10}><ProblemDisplay problem={problem}
                                        problemSet={problemSet}
                                        body={problemBody} /></Col>
@@ -214,30 +216,51 @@ class ProblemList extends React.Component {
   }
 
   render() {
-    const { problems } = this.props;
+    const { problems, type } = this.props;
     if (!problems) return null;
     const regex = new RegExp(this.state.filter ? this.state.filter.replace(/ /, '.*') : '.*', 'i');
     const filteredProblems = problems.filter(p => p.matches(regex));
-    const displayedProblems = R.take(MAX_PROBLEMS)(filteredProblems);
+
+    //  <div style={{width: 120}}>
+    //    <span>Count: {filteredProblems.length}</span>
+    //  </div>
+
+    const rowGetter = n => [filteredProblems[n]];
+    const width = 150;
+    const count = filteredProblems.length;
+    const cellRenderer = (cellData, cellDataKey, rowData, rowIndex, columnData, width) => {
+      return <Link to={cellData.route()}>{cellData.name()}</Link>;
+    };
     return (
-      <div style={{width: 120}}>
+      <div>
         <Input type='text'
                ref='input'
-               style={{marginBottom: 20}}
+               style={{marginBottom: 20, width: width}}
                value={this.state.value}
                placeholder='Filter'
                onChange={this._handleChange}/>
-        <span>Count: {filteredProblems.length}</span>
-        <ul style={{listStyleType: 'none', marginTop: 20, paddingLeft: 0}}>
-          {displayedProblems.map(p =>
-            <li key={p.name()}><Link to={p.route()}>{p.name()}</Link></li>)}
-        </ul>
+        <Table
+          rowHeight={30}
+          rowGetter={rowGetter}
+          rowsCount={count}
+          width={width}
+          maxHeight={500}
+          headerHeight={30}>
+          <Column
+            label={`${type}: ${count}`}
+            cellRenderer={cellRenderer}
+            align='left'
+            width={width}
+            dataKey={0}
+            />
+        </Table>
       </div>
     );
   }
 }
 
 ProblemList.propTypes = {
+  type: Types.string,
   problems: Types.arrayOf(Types.object)
 };
 
