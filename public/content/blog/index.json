@@ -1,4 +1,8 @@
 [
+  {"date": "2015-07-24",
+   "basename": "2015-07-24-sensu-slack.md",
+   "title": "Configuring Sensu and Slack"},
+
   {"date": "2015-07-18",
    "basename": "2015-07-18-flux-and-jest.md",
    "title": "Flux and Jest"},
