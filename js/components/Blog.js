@@ -9,7 +9,7 @@ import { ListGroupItemLink } from 'react-router-bootstrap';
 import Marked from 'marked';
 import Highlight from 'highlight.js';
 
-require('../../css/third_party/idea.css');
+require('../../node_modules/highlight.js/styles/idea.css');
 
 const getStateFromStore = () => Store.get();
 

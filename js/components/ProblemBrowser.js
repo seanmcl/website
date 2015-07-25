@@ -1,27 +1,31 @@
 'use strict';
 
-import React from 'react';
-import { PropTypes as Types } from 'react';
-import Store from '../stores/ProblemBrowserStore';
-import { makeFileRoute } from '../stores/ProblemBrowserStore';
-
-import { PROBLEM_MAX_SIZE, getProblemBrowserIndex, getProblemBrowserFile } from '../Util';
-import { Button, ButtonGroup, ButtonToolbar, Col, DropdownButton, Grid, Input, Nav, NavItem, Panel, Row } from 'react-bootstrap';
-import { ButtonLink, MenuItemLink, NavItemLink } from 'react-router-bootstrap';
-import { Link } from 'react-router';
-import Util from '../Util';
+import $ from 'jquery';
+import Highlight from 'highlight.js';
 import Marked from 'marked';
 import R from 'ramda';
-import Highlight from 'highlight.js';
-import $ from 'jquery';
-import { Table, Column } from 'fixed-data-table';
+import React from 'react';
+import Store from '../stores/ProblemBrowserStore';
+import Util from '../Util';
+import { Button, ButtonGroup, ButtonToolbar, Col, DropdownButton, Grid, Input, MenuItem, Nav, NavItem, Panel, Row } from 'react-bootstrap';
+import { ButtonLink, MenuItemLink, NavItemLink } from 'react-router-bootstrap';
+import { Column, Table} from 'fixed-data-table';
+import { Link } from 'react-router';
+import { makeFileRoute } from '../stores/ProblemBrowserStore';
+import { PROBLEM_MAX_SIZE, getProblemBrowserIndex, getProblemBrowserFile } from '../Util';
+import { PropTypes as Types } from 'react';
+import Select from 'react-select';
+import { problemBrowserReceiveSelectedClasses, problemBrowserReceiveFilter } from '../SiteActionCreators';
 
-require('../../css/third_party/idea.css');
-require('../../css/third_party/fixed-data-table.css');
+require('../../node_modules/highlight.js/styles/idea.css');
+require('../../node_modules/fixed-data-table/dist/fixed-data-table.css');
+require('../../node_modules/react-select/dist/default.css');
+require('../../css/default.css');
+require('../../css/ProblemBrowser.css');
 
 const MAX_PROBLEMS = 30;
 const getStateFromStore = () => Store.get();
-
+const buttonToolbarStyle = {marginRight: 20};
 
 /**
  *
@@ -71,7 +75,7 @@ export default class ProblemBrowserContainer extends React.Component {
 
   render() {
     let { problemSet, type, name } = this.props.params;
-    const { index, files } = this.state;
+    const { index, files, selectedClasses, filter } = this.state;
 
     const problemSetNames = index.problemSetNames();
     const defaultProblemSet = () => {
@@ -80,9 +84,12 @@ export default class ProblemBrowserContainer extends React.Component {
     };
     problemSet = problemSet || defaultProblemSet();
 
+    const filterRegexp = new RegExp(filter, 'i');
+    const problemFilter = p => p.name().match(filterRegexp) && (selectedClasses.length === 0 || R.any(c => p.name().match(c))(selectedClasses));
     const pset = index.getProblemSet(problemSet);
-    const problems = pset ? pset.problems() : null;
-    const axioms = pset ? pset.axioms() : null;
+    const classes = pset ? pset.classes() : [];
+    const problems = pset ? pset.problems().filter(problemFilter) : [];
+    const axioms = pset ? pset.axioms().filter(problemFilter) : [];
 
     type = type || 'problems';
 
@@ -97,13 +104,20 @@ export default class ProblemBrowserContainer extends React.Component {
     const problem = pset ? pset.problemOrAxiom(type, name) : null;
     const file = problem ? problem.file() : null;
     const body = file ? files[file] : null;
-    return <ProblemBrowser problems={problems}
-                           axioms={axioms}
-                           type={type}
-                           problem={problem}
-                           problemSet={problemSet}
-                           problemSetNames={problemSetNames}
-                           problemBody={body} />;
+    return (
+      <div style={{marginTop: 10}}>
+        <ProblemBrowser problems={problems}
+                        axioms={axioms}
+                        type={type}
+                        problem={problem}
+                        problemSet={problemSet}
+                        problemSetNames={problemSetNames}
+                        problemBody={body}
+                        classes={classes}
+                        selectedClasses={selectedClasses}
+                        filter={filter} />
+      </div>
+    );
   }
 }
 
@@ -112,26 +126,33 @@ export default class ProblemBrowserContainer extends React.Component {
  */
 class ProblemBrowser extends React.Component {
   render() {
-    const { axioms, problemBody, problem, problems, problemSet, problemSetNames, type } = this.props;
+    const { axioms, problemBody, problem, problems, problemSet, problemSetNames, type, classes, selectedClasses, filter } = this.props;
     const display = type === 'axioms' ? axioms : problems;
     return (
       <Grid>
-        <Row>
+        <Row style={{marginBottom: 20}}>
           <Col md={12}>
-            <ButtonToolbar style={{marginBottom: 20}}>
-              <ProblemSetChooser problemSet={problemSet}
-                                 problemSetNames={problemSetNames} />
-              <TypeChooser type={type}
-                           hasAxioms={axioms && axioms.length !== 0}
-                           problemSet={problemSet} />
-            </ButtonToolbar>
+            <ProblemSetChooser problemSet={problemSet}
+                               problemSetNames={problemSetNames} />
+            <TypeChooser type={type}
+                         hasAxioms={axioms && axioms.length !== 0}
+                         problemSet={problemSet} />
+            <ClassChooser classes={classes}
+                          selectedClasses={selectedClasses} />
+            <ProblemFilter contents={filter} />
           </Col>
         </Row>
         <Row>
-          <Col md={2}><ProblemList problems={display} type={type} /></Col>
-          <Col md={10}><ProblemDisplay problem={problem}
-                                       problemSet={problemSet}
-                                       body={problemBody} /></Col>
+          <Col md={2}>
+            <ProblemList problems={display}
+                         type={type}
+                         selectedClasses={selectedClasses} />
+          </Col>
+          <Col md={10}>
+            <ProblemDisplay problem={problem}
+                            problemSet={problemSet}
+                            body={problemBody} />
+          </Col>
         </Row>
       </Grid>
     );
@@ -156,7 +177,7 @@ class ProblemSetChooser extends React.Component {
   render() {
     const { problemSet, problemSetNames } = this.props;
     return (
-      <ButtonGroup style={{marginRight: 20}}>
+      <ButtonGroup style={buttonToolbarStyle}>
         {problemSetNames.map(s =>
           <ButtonLink active={problemSet === s} key={s} to={`/imogen/problems/${s}`}>
             {s}
@@ -180,7 +201,7 @@ class TypeChooser extends React.Component {
     const { problemSet, type, hasAxioms } = this.props;
     const types = ['problems', 'axioms'];
     return (
-      <ButtonGroup>
+      <ButtonGroup style={buttonToolbarStyle}>
         {types.map(t =>
             <ButtonLink key={t}
                         active={type === t}
@@ -204,64 +225,94 @@ TypeChooser.propTypes = {
 /**
  *
  */
+class ClassChooser extends React.Component {
+  render() {
+    const { classes, selectedClasses } = this.props;
+    const disabled = !classes || classes.length === 0;
+    const onChange = (_, cs) => {
+      console.log(`cs: ${cs.map(k => k.label).join(', ')}`);
+      problemBrowserReceiveSelectedClasses(cs.map(c => c.label));
+    };
+    const options = classes.map(c => ({value: c, label: c}));
+    return (
+      <ButtonGroup style={buttonToolbarStyle}>
+        <Select options={options}
+                disabled={disabled}
+                placeholder='Problem classes'
+                onChange={onChange}
+                value={selectedClasses}
+                multi={true} />
+      </ButtonGroup>
+    );
+  }
+}
+
+ClassChooser.propTypes = {
+  classes: Types.arrayOf(Types.string),
+  selectedClasses: Types.arrayOf(Types.string)
+};
+
+
+/**
+ *
+ */
+class ProblemFilter extends React.Component {
+  render() {
+    const { contents } = this.props;
+    const onChange = () => problemBrowserReceiveFilter(this.refs.input.getValue());
+    return (
+      <ButtonGroup style={buttonToolbarStyle}>
+        <Input type='text'
+               value={contents}
+               placeholder='Filter'
+               ref='input'
+               onChange={onChange} />
+      </ButtonGroup>
+    );
+  }
+}
+
+ProblemFilter.propTypes = {
+  contents: Types.string
+};
+
+
+/**
+ *
+ */
 class ProblemList extends React.Component {
-  constructor() {
-    super();
-    this.state = {filter: ''};
-    this._handleChange = this._handleChange.bind(this);
-  }
-
-  _handleChange() {
-    this.setState({filter: this.refs.input.getValue()});
-  }
-
   render() {
     const { problems, type } = this.props;
     if (!problems) return null;
-    const regex = new RegExp(this.state.filter ? this.state.filter.replace(/ /, '.*') : '.*', 'i');
-    const filteredProblems = problems.filter(p => p.matches(regex));
-
-    //  <div style={{width: 120}}>
-    //    <span>Count: {filteredProblems.length}</span>
-    //  </div>
-
-    const rowGetter = n => [filteredProblems[n]];
+    const rowGetter = n => [problems[n]];
     const width = 150;
-    const count = filteredProblems.length;
+    const count = problems.length;
     const cellRenderer = (cellData, cellDataKey, rowData, rowIndex, columnData, width) => {
       return <Link to={cellData.route()}>{cellData.name()}</Link>;
     };
     return (
-      <div>
-        <Input type='text'
-               ref='input'
-               style={{marginBottom: 20, width: width}}
-               value={this.state.value}
-               placeholder='Filter'
-               onChange={this._handleChange}/>
-        <Table
-          rowHeight={30}
-          rowGetter={rowGetter}
-          rowsCount={count}
+      <Table
+        rowHeight={30}
+        rowGetter={rowGetter}
+        rowsCount={count}
+        width={width}
+        maxHeight={500}
+        headerHeight={30}>
+        <Column
+          label={`${type}: ${count}`}
+          cellRenderer={cellRenderer}
+          align='left'
           width={width}
-          maxHeight={500}
-          headerHeight={30}>
-          <Column
-            label={`${type}: ${count}`}
-            cellRenderer={cellRenderer}
-            align='left'
-            width={width}
-            dataKey={0}
-            />
-        </Table>
-      </div>
+          dataKey={0}
+          />
+      </Table>
     );
   }
 }
 
 ProblemList.propTypes = {
   type: Types.string,
-  problems: Types.arrayOf(Types.object)
+  problems: Types.arrayOf(Types.object),
 };
 
 

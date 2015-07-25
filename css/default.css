@@ -5,10 +5,10 @@ html {
 
 .navbar-inverse {
   /* Fill annoying missing corner pixels. */
-  border-radius: 0px;
+  border-radius: 0;
 }
 
 .container {
   /* Bootstrap navbar has a huge margin without this. */
-  margin-left: 0px;
+  margin-left: 0;
 }

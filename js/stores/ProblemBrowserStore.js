@@ -74,14 +74,16 @@ const ProblemSet = o => (() => {
   if (!o.dir || !o.axioms || !o.problems) throw new TypeError;
   const _axioms = o.axioms.map(Axiom(o.name, o.dir));
   const _problems = o.problems.map(Problem(o.name, o.dir));
+  const _classes = R.uniq(_problems.map(p => p.name().substr(0, 3)));
   const dir = () => o.dir;
   const name = () => o.name;
   const axioms = () => _axioms;
   const problems = () => _problems;
   const problem = name => R.find(p => p.name() === name)(_problems);
   const axiom = name => R.find(p => p.name() === name)(_axioms);
+  const classes = () => _classes;
   const problemOrAxiom = (type, name) => type === 'axioms' ? axiom(name) : problem(name);
-  return {name, axioms, dir, problems, problemOrAxiom};
+  return {name, axioms, dir, problems, problemOrAxiom, classes};
 })();
 
 
@@ -103,7 +105,9 @@ const Index = sets => (() => {
  */
 let _state = {
   index: Index([]),
-  files: {}
+  files: {},
+  selectedClasses: [],
+  filter: ''
 };
 
 const Store = assign({}, EventEmitter.prototype, {
@@ -138,8 +142,20 @@ Store.dispatchToken = Dispatcher.register(action => {
       Store.emitChange();
       break;
 
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_CLASSES:
+      console.log(`Received classes: ${action.classes}`);
+      _state.selectedClasses = action.classes;
+      Store.emitChange();
+      break;
+
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_FILTER:
+      console.log(`Received filter: ${action.filter}`);
+      _state.filter = action.filter;
+      Store.emitChange();
+      break;
+
     default:
-      console.log(`Unknown action: ${action.type}`);
+      // do nothing
   }
 });
 

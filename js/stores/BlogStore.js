@@ -43,7 +43,6 @@ Store.dispatchToken = Dispatcher.register(action => {
 
     default:
       // do nothing
-      console.log(`Unknown action: ${action.type}`);
   }
 });
 

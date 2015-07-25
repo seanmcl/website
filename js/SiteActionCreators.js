@@ -3,6 +3,7 @@
 import Dispatcher from './SiteDispatcher';
 import { ActionTypes } from './SiteConstants';
 
+
 module.exports = {
 
   quotesReceiveQuotes: quotes => {
@@ -37,6 +38,18 @@ module.exports = {
     type: ActionTypes.PROBLEM_BROWSER_RECEIVE_FILE,
     name,
     file,
+  }),
+
+  problemBrowserReceiveSelectedClasses: classes => {
+    Dispatcher.dispatch({
+      type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_CLASSES,
+      classes: classes.sort(),
+    })
+  },
+
+  problemBrowserReceiveFilter: filter => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_FILTER,
+    filter,
   }),
 
 };

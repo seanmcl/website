@@ -42,21 +42,16 @@ class Imogen extends React.Component {
   render() {
     return (
       <div>
-        <h1>Imogen!</h1>
         <Grid>
           <Row>
-            <Col md={9}>Foo</Col>
-            <Col md={3}><Index /></Col>
+            <Col md={2}><Index /></Col>
+            <Col md={10}>Imogen</Col>
           </Row>
         </Grid>
       </div>
     );
   }
 }
-
-Imogen.propTypes = {
-};
-
 
 /**
  *

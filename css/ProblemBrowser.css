@@ -1,0 +1,36 @@
+.Select {
+  min-width: 200px;
+}
+
+.Select.is-multi .Select-control {
+  padding: 0;
+}
+
+.Select-item {
+  color: black;
+  border-color: white white white white;
+}
+
+.Select-item-label {
+  background-color: white;
+  border-color: white white white white;
+}
+
+.Select-item-icon {
+  background-color: white;
+  border-color: white white white white;
+}
+
+.Select.is-multi .Select-input {
+  min-width: 50px;
+}
+
+.btn-group .form-group {
+  margin: 0;
+  height: 34px;
+}
+
+.Select-placeholder {
+  padding-top: 5px;
+  padding-botton: 7px;
+}
