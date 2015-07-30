@@ -40,16 +40,24 @@ module.exports = {
     file,
   }),
 
-  problemBrowserReceiveSelectedClasses: classes => {
-    Dispatcher.dispatch({
-      type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_CLASSES,
-      classes: classes.sort(),
-    })
-  },
+  problemBrowserReceiveSelectedDomains: domains => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_DOMAINS,
+    domains,
+  }),
 
   problemBrowserReceiveFilter: filter => Dispatcher.dispatch({
     type: ActionTypes.PROBLEM_BROWSER_RECEIVE_FILTER,
     filter,
+  }),
+
+  problemBrowserReceiveSelectedTypes: types => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_TYPES,
+    types,
+  }),
+
+  problemBrowserReceiveSelectedStatus: status => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_STATUS,
+    status,
   }),
 
 };

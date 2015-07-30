@@ -42,7 +42,19 @@ const Problem = (problemSetName, problemSetDir) => p => (() => {
   const size = () => p.size;
   const route = () => _route;
   const matches = rex => _problemName.match(rex);
-  return {file, name, size, route, matches};
+  const stats = () => p.stats;
+  const type = () => {
+    switch (name()[6]) {
+      case '-': return 'CNF';
+      case '+': return 'FOF';
+      case '_': return 'TFF';
+      case '=': return 'TFA';
+      case '^': return 'THF';
+      default: throw `Unknown type: ${name()}}`;
+    }
+  };
+  const status = () => p.stats && p.stats.length >= 2 ? p.stats[2] : null;
+  return {file, name, size, route, matches, stats, type, status};
 })();
 
 
@@ -74,16 +86,17 @@ const ProblemSet = o => (() => {
   if (!o.dir || !o.axioms || !o.problems) throw new TypeError;
   const _axioms = o.axioms.map(Axiom(o.name, o.dir));
   const _problems = o.problems.map(Problem(o.name, o.dir));
-  const _classes = R.uniq(_problems.map(p => p.name().substr(0, 3)));
+  const _domains = R.uniq(_problems.map(p => p.name().substr(0, 3)));
   const dir = () => o.dir;
   const name = () => o.name;
   const axioms = () => _axioms;
   const problems = () => _problems;
   const problem = name => R.find(p => p.name() === name)(_problems);
   const axiom = name => R.find(p => p.name() === name)(_axioms);
-  const classes = () => _classes;
+  const hasStats = () => o.hasStats;
+  const domains = () => _domains;
   const problemOrAxiom = (type, name) => type === 'axioms' ? axiom(name) : problem(name);
-  return {name, axioms, dir, problems, problemOrAxiom, classes};
+  return {name, axioms, dir, problems, problemOrAxiom, domains, hasStats};
 })();
 
 
@@ -106,8 +119,10 @@ const Index = sets => (() => {
 let _state = {
   index: Index([]),
   files: {},
-  selectedClasses: [],
-  filter: ''
+  selectedDomains: [],
+  filter: '',
+  selectedTypes: [],
+  selectedStatus: []
 };
 
 const Store = assign({}, EventEmitter.prototype, {
@@ -142,15 +157,27 @@ Store.dispatchToken = Dispatcher.register(action => {
       Store.emitChange();
       break;
 
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_CLASSES:
-      console.log(`Received classes: ${action.classes}`);
-      _state.selectedClasses = action.classes;
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_DOMAINS:
+      console.log(`Received domains: ${action.domains}`);
+      _state.selectedDomains = action.domains.sort();
       Store.emitChange();
       break;
 
     case ActionTypes.PROBLEM_BROWSER_RECEIVE_FILTER:
       console.log(`Received filter: ${action.filter}`);
       _state.filter = action.filter;
+      Store.emitChange();
+      break;
+
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_TYPES:
+      console.log(`Received types: ${action.types}`);
+      _state.selectedTypes = action.types.sort();
+      Store.emitChange();
+      break;
+
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_STATUS:
+      console.log(`Received status: ${action.status}`);
+      _state.selectedStatus = action.status.sort();
       Store.emitChange();
       break;
 

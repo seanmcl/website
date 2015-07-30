@@ -7,15 +7,21 @@ import R from 'ramda';
 import React from 'react';
 import Store from '../stores/ProblemBrowserStore';
 import Util from '../Util';
-import { Button, ButtonGroup, ButtonToolbar, Col, DropdownButton, Grid, Input, MenuItem, Nav, NavItem, Panel, Row } from 'react-bootstrap';
+import { Button, ButtonGroup, ButtonToolbar, Col, DropdownButton, Grid, Input,
+         MenuItem, Nav, NavItem, Panel, Row } from 'react-bootstrap';
 import { ButtonLink, MenuItemLink, NavItemLink } from 'react-router-bootstrap';
 import { Column, Table} from 'fixed-data-table';
 import { Link } from 'react-router';
 import { makeFileRoute } from '../stores/ProblemBrowserStore';
-import { PROBLEM_MAX_SIZE, getProblemBrowserIndex, getProblemBrowserFile } from '../Util';
+import { PROBLEM_MAX_SIZE,
+         getProblemBrowserIndex,
+         getProblemBrowserFile } from '../Util';
 import { PropTypes as Types } from 'react';
 import Select from 'react-select';
-import { problemBrowserReceiveSelectedClasses, problemBrowserReceiveFilter } from '../SiteActionCreators';
+import { problemBrowserReceiveSelecteddomains,
+         problemBrowserReceiveFilter,
+         problemBrowserReceiveSelectedTypes,
+         problemBrowserReceiveSelectedStatus } from '../SiteActionCreators';
 
 require('../../node_modules/highlight.js/styles/idea.css');
 require('../../node_modules/fixed-data-table/dist/fixed-data-table.css');
@@ -26,6 +32,20 @@ require('../../css/ProblemBrowser.css');
 const MAX_PROBLEMS = 30;
 const getStateFromStore = () => Store.get();
 const buttonToolbarStyle = {marginRight: 20};
+const Style = (() => {
+  const sidebarWidth = 165;
+  return {
+    grid: {
+      marginTop: 20
+    },
+    sidebarWidth: sidebarWidth,
+    sidebarButton: {
+      width: sidebarWidth,
+      minWidth: sidebarWidth,
+      marginBottom: 20
+    }
+  }
+})();
 
 /**
  *
@@ -75,7 +95,7 @@ export default class ProblemBrowserContainer extends React.Component {
 
   render() {
     let { problemSet, type, name } = this.props.params;
-    const { index, files, selectedClasses, filter } = this.state;
+    const { index, files, selectedDomains, filter, selectedTypes, selectedStatus } = this.state;
 
     const problemSetNames = index.problemSetNames();
     const defaultProblemSet = () => {
@@ -85,9 +105,21 @@ export default class ProblemBrowserContainer extends React.Component {
     problemSet = problemSet || defaultProblemSet();
 
     const filterRegexp = new RegExp(filter, 'i');
-    const problemFilter = p => p.name().match(filterRegexp) && (selectedClasses.length === 0 || R.any(c => p.name().match(c))(selectedClasses));
+    const problemFilter = p =>
+      p.name().match(filterRegexp)
+      && (selectedDomains.length === 0
+          || R.any(c => p.name().match(c))(selectedDomains))
+      && (problemSet != 'TPTP'
+          || selectedTypes.length === 0
+          || !p.type
+          || R.contains(p.type())(selectedTypes))
+      && (problemSet != 'TPTP'
+      || selectedStatus.length === 0
+      || !p.status
+      || R.contains(p.status())(selectedStatus));
+
     const pset = index.getProblemSet(problemSet);
-    const classes = pset ? pset.classes() : [];
+    const domains = pset ? pset.domains() : [];
     const problems = pset ? pset.problems().filter(problemFilter) : [];
     const axioms = pset ? pset.axioms().filter(problemFilter) : [];
 
@@ -105,18 +137,18 @@ export default class ProblemBrowserContainer extends React.Component {
     const file = problem ? problem.file() : null;
     const body = file ? files[file] : null;
     return (
-      <div style={{marginTop: 10}}>
-        <ProblemBrowser problems={problems}
-                        axioms={axioms}
-                        type={type}
-                        problem={problem}
-                        problemSet={problemSet}
-                        problemSetNames={problemSetNames}
-                        problemBody={body}
-                        classes={classes}
-                        selectedClasses={selectedClasses}
-                        filter={filter} />
-      </div>
+      <ProblemBrowser problems={problems}
+                      axioms={axioms}
+                      type={type}
+                      problem={problem}
+                      problemSet={problemSet}
+                      problemSetNames={problemSetNames}
+                      problemBody={body}
+                      domains={domains}
+                      selectedDomains={selectedDomains}
+                      filter={filter}
+                      selectedTypes={selectedTypes}
+                      selectedStatus={selectedStatus} />
     );
   }
 }
@@ -126,29 +158,48 @@ export default class ProblemBrowserContainer extends React.Component {
  */
 class ProblemBrowser extends React.Component {
   render() {
-    const { axioms, problemBody, problem, problems, problemSet, problemSetNames, type, classes, selectedClasses, filter } = this.props;
+    const { axioms, problemBody, problem, problems, problemSet,
+            problemSetNames, type, domains, selectedDomains, filter,
+            selectedTypes, selectedStatus } = this.props;
     const display = type === 'axioms' ? axioms : problems;
     return (
-      <Grid>
-        <Row style={{marginBottom: 20}}>
-          <Col md={12}>
-            <ProblemSetChooser problemSet={problemSet}
-                               problemSetNames={problemSetNames} />
-            <TypeChooser type={type}
-                         hasAxioms={axioms && axioms.length !== 0}
-                         problemSet={problemSet} />
-            <ClassChooser classes={classes}
-                          selectedClasses={selectedClasses} />
-            <ProblemFilter contents={filter} />
-          </Col>
-        </Row>
+      <Grid style={Style.grid}>
         <Row>
           <Col md={2}>
-            <ProblemList problems={display}
-                         type={type}
-                         selectedClasses={selectedClasses} />
+
+            <ProblemSetChooser problemSet={problemSet}
+                               problemSetNames={problemSetNames}
+                               style={Style.sidebarButton} />
+
+            <TypeChooser type={type}
+                         hasAxioms={axioms && axioms.length !== 0}
+                         problemSet={problemSet}
+                         style={Style.sidebarButton} />
+
+            <div style={Style.sidebarButton}>
+              <ClassChooser domains={domains}
+                            selectedDomains={selectedDomains} />
+            </div>
+
+            <div style={Style.sidebarButton}>
+              <ProblemTypeChooser selectedTypes={selectedTypes} />
+            </div>
+
+            <div style={Style.sidebarButton}>
+              <StatusChooser selectedStatus={selectedStatus} />
+            </div>
+
+            <ProblemFilter contents={filter}
+                           style={Style.sidebarButton} />
+
+            <div style={Style.sidebarButton}>
+              <ProblemList problems={display}
+                           type={type}
+                           selectedDomains={selectedDomains}/>
+            </div>
+
           </Col>
-          <Col md={10}>
+          <Col md={9}>
             <ProblemDisplay problem={problem}
                             problemSet={problemSet}
                             body={problemBody} />
@@ -166,7 +217,9 @@ ProblemBrowser.propTypes = {
   problems: Types.arrayOf(Types.object),
   problemSet: Types.string,
   problemSetNames: Types.arrayOf(Types.string),
-  type: Types.string
+  selectedStatus: Types.arrayOf(Types.string),
+  selectedTypes: Types.arrayOf(Types.string),
+  type: Types.string,
 };
 
 
@@ -175,21 +228,22 @@ ProblemBrowser.propTypes = {
  */
 class ProblemSetChooser extends React.Component {
   render() {
-    const { problemSet, problemSetNames } = this.props;
+    const { problemSet, problemSetNames, style } = this.props;
     return (
-      <ButtonGroup style={buttonToolbarStyle}>
-        {problemSetNames.map(s =>
-          <ButtonLink active={problemSet === s} key={s} to={`/imogen/problems/${s}`}>
-            {s}
-          </ButtonLink>)}
-      </ButtonGroup>
+        <DropdownButton style={style} title={problemSet}>
+          {problemSetNames.map(s =>
+            <MenuItemLink key={s} to={`/imogen/problems/${s}`}>
+              {s}
+            </MenuItemLink>)}
+        </DropdownButton>
     );
   }
 }
 
 ProblemSetChooser.propTypes = {
-  problemSet: Types.string,
-  problemSetNames: Types.arrayOf(Types.string).isRequired
+  problemSet: Types.string.isRequired,
+  problemSetNames: Types.arrayOf(Types.string).isRequired,
+  style: Types.object,
 };
 
 
@@ -198,27 +252,28 @@ ProblemSetChooser.propTypes = {
  */
 class TypeChooser extends React.Component {
   render() {
-    const { problemSet, type, hasAxioms } = this.props;
+    const { problemSet, type, hasAxioms, style } = this.props;
+    if (!problemSet || !hasAxioms) return null;
     const types = ['problems', 'axioms'];
     return (
-      <ButtonGroup style={buttonToolbarStyle}>
+      <DropdownButton title={type.capitalize()} style={style}>
         {types.map(t =>
-            <ButtonLink key={t}
-                        active={type === t}
-                        disabled={!problemSet || (!hasAxioms && t === 'axioms')}
-                        to={`/imogen/problems/${problemSet}/${t}`}>
-              {t}
-            </ButtonLink>
+            <MenuItemLink key={t}
+                          active={type === t}
+                          to={`/imogen/problems/${problemSet}/${t}`}>
+              {t.capitalize()}
+            </MenuItemLink>
         )}
-      </ButtonGroup>
+      </DropdownButton>
     );
   }
 }
 
 TypeChooser.propTypes = {
-  type: Types.string,
-  problemSet: Types.string,
-  hasAxioms: Types.bool
+  type: Types.string.isRequired,
+  problemSet: Types.string.isRequired,
+  hasAxioms: Types.bool.isRequired,
+  style: Types.object,
 };
 
 
@@ -227,29 +282,24 @@ TypeChooser.propTypes = {
  */
 class ClassChooser extends React.Component {
   render() {
-    const { classes, selectedClasses } = this.props;
-    const disabled = !classes || classes.length === 0;
-    const onChange = (_, cs) => {
-      console.log(`cs: ${cs.map(k => k.label).join(', ')}`);
-      problemBrowserReceiveSelectedClasses(cs.map(c => c.label));
-    };
-    const options = classes.map(c => ({value: c, label: c}));
+    const { domains, selectedDomains } = this.props;
+    const disabled = !domains || domains.length === 0;
+    const onChange = (_, cs) => problemBrowserReceiveSelectedDomains(cs.map(c => c.label));
+    const options = domains.map(c => ({value: c, label: c}));
     return (
-      <ButtonGroup style={buttonToolbarStyle}>
-        <Select options={options}
-                disabled={disabled}
-                placeholder='Problem classes'
-                onChange={onChange}
-                value={selectedClasses}
-                multi={true} />
-      </ButtonGroup>
+      <Select options={options}
+              disabled={disabled}
+              placeholder='Domains'
+              onChange={onChange}
+              value={selectedDomains}
+              multi={true} />
     );
   }
 }
 
 ClassChooser.propTypes = {
-  classes: Types.arrayOf(Types.string),
-  selectedClasses: Types.arrayOf(Types.string)
+  domains: Types.arrayOf(Types.string).isRequired,
+  selectedDomains: Types.arrayOf(Types.string).isRequired,
 };
 
 
@@ -258,24 +308,77 @@ ClassChooser.propTypes = {
  */
 class ProblemFilter extends React.Component {
   render() {
-    const { contents } = this.props;
+    const { contents, style } = this.props;
     const onChange = () => problemBrowserReceiveFilter(this.refs.input.getValue());
     return (
-      <ButtonGroup style={buttonToolbarStyle}>
-        <Input type='text'
-               value={contents}
-               placeholder='Filter'
-               ref='input'
-               onChange={onChange} />
-      </ButtonGroup>
+      <Input type='text'
+             style={style}
+             value={contents}
+             placeholder='Filter'
+             ref='input'
+             onChange={onChange} />
     );
   }
 }
 
 ProblemFilter.propTypes = {
-  contents: Types.string
+  contents: Types.string.isRequired,
+  style: Types.object,
 };
 
+
+/**
+ *
+ */
+class ProblemTypeChooser extends React.Component {
+  render() {
+    const { selectedTypes } = this.props;
+    const types = ['CNF', 'FOF', 'TFA', 'TFF', 'THF'];
+    const options = types.map(t => ({value: t, label: t}));
+    const onChange = (_, types) => problemBrowserReceiveSelectedTypes(types.map(t => t.label));
+    return (
+      <Select options={options}
+              placeholder='Types'
+              onChange={onChange}
+              value={selectedTypes}
+              multi={true} />
+    );
+  }
+}
+
+ProblemTypeChooser.propTypes = {
+  selectedTypes: Types.arrayOf(Types.string).isRequired
+};
+
+
+/**
+ *
+ */
+class StatusChooser extends React.Component {
+  render() {
+    const { selectedStatus } = this.props;
+    const options = [
+      {value: 'UNS', label: 'Unsatisfiable'},
+      {value: 'SAT', label: 'Satisfiable'},
+      {value: 'THM', label: 'Theorem'},
+      {value: 'UNK', label: 'Unknown'},
+      {value: 'OPN', label: 'Open'},
+      {value: 'CSA', label: 'CounterSatisfiable'}
+    ];
+    const onChange = (_, status) => problemBrowserReceiveSelectedStatus(status.map(s => s.value));
+    return (
+      <Select options={options}
+              placeholder='Status'
+              onChange={onChange}
+              value={selectedStatus}
+              multi={true} />
+    );
+  }
+}
+
+StatusChooser.propTypes = {
+  selectedStatus: Types.arrayOf(Types.string).isRequired
+};
 
 /**
  *
@@ -285,26 +388,23 @@ class ProblemList extends React.Component {
     const { problems, type } = this.props;
     if (!problems) return null;
     const rowGetter = n => [problems[n]];
-    const width = 150;
     const count = problems.length;
+    //noinspection JSUnusedLocalSymbols
     const cellRenderer = (cellData, cellDataKey, rowData, rowIndex, columnData, width) => {
       return <Link to={cellData.route()}>{cellData.name()}</Link>;
     };
     return (
-      <Table
-        rowHeight={30}
-        rowGetter={rowGetter}
-        rowsCount={count}
-        width={width}
-        maxHeight={500}
-        headerHeight={30}>
-        <Column
-          label={`${type}: ${count}`}
-          cellRenderer={cellRenderer}
-          align='left'
-          width={width}
-          dataKey={0}
-          />
+      <Table rowHeight={30}
+             rowGetter={rowGetter}
+             rowsCount={count}
+             width={Style.sidebarWidth}
+             maxHeight={500}
+             headerHeight={30}>
+        <Column label={`${type}: ${count}`}
+                cellRenderer={cellRenderer}
+                align='left'
+                width={Style.sidebarWidth}
+                dataKey={0}/>
       </Table>
     );
   }
@@ -341,6 +441,7 @@ class ProblemDisplay extends React.Component {
     const makeLink = s => {
       const name = unquote(s).replace(/Axioms\//, '').replace(/\.ax/, '');
       const route = makeFileRoute(problemSet, 'axioms', name);
+      //noinspection HtmlUnknownAnchorTarget
       return `<a href='/#${route}'>${s}</a>`
     };
     for (let i = 0; i < nodes.length; i = i + 1) {
@@ -360,22 +461,18 @@ class ProblemDisplay extends React.Component {
     if (!problem) return null;
     if (problem.size() > PROBLEM_MAX_SIZE) {
       return (
-        <div style={{width: 600}}>
-          <Panel header='Error' bsStyle='danger'>
-            Problem is too large to display. ({problem.size()} bytes)
-          </Panel>
-        </div>
+        <Panel header='Error' bsStyle='danger'>
+          Problem is too large to display. ({problem.size()} bytes)
+        </Panel>
       );
     }
     if (!body) return <h4>Loading...</h4>;
     return (
-      <div style={{fontSize: 16}}>
-        <pre>
-          <code className='prolog'>
-            {body}
+      <pre>
+        <code className='prolog'>
+          {body}
           </code>
-        </pre>
-      </div>
+      </pre>
     );
   }
 }

@@ -8,6 +8,10 @@ const logError = e => console.log(e);
 export const CHANGE_EVENT = 'change';
 export const PROBLEM_MAX_SIZE = '100000';
 
+String.prototype.capitalize = function() {
+  return this.charAt(0).toUpperCase() + this.slice(1);
+};
+
 /**
  *
  */
