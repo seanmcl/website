@@ -54,7 +54,9 @@ const Problem = (problemSetName, problemSetDir) => p => (() => {
     }
   };
   const status = () => p.stats && p.stats.length >= 2 ? p.stats[2] : null;
-  return {file, name, size, route, matches, stats, type, status};
+  const difficulty = () => p.stats ? p.stats[3] : null;
+  const hasEquality = () => p.stats ? p.stats[11] : null;
+  return {file, difficulty, hasEquality, name, size, route, matches, stats, type, status};
 })();
 
 
@@ -117,12 +119,14 @@ const Index = sets => (() => {
  *
  */
 let _state = {
+  difficulty: {lower: '0.0', upper: '1.0'},
   index: Index([]),
   files: {},
   selectedDomains: [],
   filter: '',
-  selectedTypes: [],
-  selectedStatus: []
+  selectedForms: [],
+  selectedStatus: [],
+  equality: null,
 };
 
 const Store = assign({}, EventEmitter.prototype, {
@@ -169,15 +173,27 @@ Store.dispatchToken = Dispatcher.register(action => {
       Store.emitChange();
       break;
 
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_TYPES:
-      console.log(`Received types: ${action.types}`);
-      _state.selectedTypes = action.types.sort();
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_FORMS:
+      console.log(`Received forms: ${action.forms}`);
+      _state.selectedForms = action.forms.sort();
       Store.emitChange();
       break;
 
     case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_STATUS:
       console.log(`Received status: ${action.status}`);
       _state.selectedStatus = action.status.sort();
+      Store.emitChange();
+      break;
+
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_DIFFICULTY:
+      console.log(`Received difficulty: ${action.difficulty}`);
+      _state.difficulty = action.difficulty;
+      Store.emitChange();
+      break;
+
+    case ActionTypes.PROBLEM_BROWSER_RECEIVE_EQUALITY:
+      console.log(`Received equality: ${action.equality}`);
+      _state.equality = action.equality;
       Store.emitChange();
       break;
 

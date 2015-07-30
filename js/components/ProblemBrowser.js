@@ -18,10 +18,13 @@ import { PROBLEM_MAX_SIZE,
          getProblemBrowserFile } from '../Util';
 import { PropTypes as Types } from 'react';
 import Select from 'react-select';
-import { problemBrowserReceiveSelecteddomains,
+import { problemBrowserReceiveSelectedDomains,
          problemBrowserReceiveFilter,
-         problemBrowserReceiveSelectedTypes,
+         problemBrowserReceiveDifficulty,
+         problemBrowserReceiveEquality,
+         problemBrowserReceiveSelectedForms,
          problemBrowserReceiveSelectedStatus } from '../SiteActionCreators';
+import objectAssign from 'object-assign';
 
 require('../../node_modules/highlight.js/styles/idea.css');
 require('../../node_modules/fixed-data-table/dist/fixed-data-table.css');
@@ -33,16 +36,18 @@ const MAX_PROBLEMS = 30;
 const getStateFromStore = () => Store.get();
 const buttonToolbarStyle = {marginRight: 20};
 const Style = (() => {
-  const sidebarWidth = 165;
+  const sidebarWidth = 160;
   return {
     grid: {
       marginTop: 20
     },
     sidebarWidth: sidebarWidth,
     sidebarButton: {
-      width: sidebarWidth,
-      minWidth: sidebarWidth,
-      marginBottom: 20
+      float: 'left',
+      marginRight: 20,
+      //width: sidebarWidth,
+      //minWidth: sidebarWidth,
+      //marginBottom: 20,
     }
   }
 })();
@@ -95,7 +100,16 @@ export default class ProblemBrowserContainer extends React.Component {
 
   render() {
     let { problemSet, type, name } = this.props.params;
-    const { index, files, selectedDomains, filter, selectedTypes, selectedStatus } = this.state;
+    const { index, files, selectedDomains, filter, selectedForms,
+            selectedStatus, difficulty, equality } = this.state;
+    let { lower, upper } = difficulty;
+    lower = lower ? lower : '0.0';
+    upper = upper ? upper : '1.0';
+    let lowerFloat = parseFloat(lower);
+    let upperFloat = parseFloat(upper);
+    const epsilon = 0.0001;
+    lowerFloat = isNaN(lowerFloat) ? 0.0 : lowerFloat - epsilon;
+    upperFloat = isNaN(lowerFloat) ? 1.0 : upperFloat + epsilon;
 
     const problemSetNames = index.problemSetNames();
     const defaultProblemSet = () => {
@@ -110,13 +124,21 @@ export default class ProblemBrowserContainer extends React.Component {
       && (selectedDomains.length === 0
           || R.any(c => p.name().match(c))(selectedDomains))
       && (problemSet != 'TPTP'
-          || selectedTypes.length === 0
+          || selectedForms.length === 0
           || !p.type
-          || R.contains(p.type())(selectedTypes))
+          || R.contains(p.type())(selectedForms))
       && (problemSet != 'TPTP'
-      || selectedStatus.length === 0
-      || !p.status
-      || R.contains(p.status())(selectedStatus));
+          || selectedStatus.length === 0
+          || !p.status
+          || R.contains(p.status())(selectedStatus))
+      && (problemSet != 'TPTP'
+          || !p.difficulty
+          || !$.isNumeric(p.difficulty())
+          || (lowerFloat <= p.difficulty() && p.difficulty() <= upperFloat))
+      && (!equality
+          || !p.hasEquality
+          || (equality === 'Some' && p.hasEquality())
+          || (equality === 'None' && !p.hasEquality()));
 
     const pset = index.getProblemSet(problemSet);
     const domains = pset ? pset.domains() : [];
@@ -147,8 +169,11 @@ export default class ProblemBrowserContainer extends React.Component {
                       domains={domains}
                       selectedDomains={selectedDomains}
                       filter={filter}
-                      selectedTypes={selectedTypes}
-                      selectedStatus={selectedStatus} />
+                      selectedForms={selectedForms}
+                      selectedStatus={selectedStatus}
+                      difficulty={difficulty}
+                      equality={equality}
+        />
     );
   }
 }
@@ -160,51 +185,71 @@ class ProblemBrowser extends React.Component {
   render() {
     const { axioms, problemBody, problem, problems, problemSet,
             problemSetNames, type, domains, selectedDomains, filter,
-            selectedTypes, selectedStatus } = this.props;
+            selectedForms, selectedStatus, difficulty, equality } = this.props;
     const display = type === 'axioms' ? axioms : problems;
+    const isTptp = problemSet == 'TPTP';
+    const hasAxioms = axioms && axioms.length !== 0;
     return (
       <Grid style={Style.grid}>
         <Row>
+          <Col md={12}>
+            <ButtonToolbar>
+              <span style={Style.sidebarButton}>
+                <ProblemSetChooser problemSet={problemSet}
+                                   problemSetNames={problemSetNames} />
+              </span>
+
+              <span style={objectAssign({display: hasAxioms ? null : 'none'}, Style.sidebarButton)}>
+                <TypeChooser type={type}
+                             problemSet={problemSet} />
+              </span>
+
+              <span style={Style.sidebarButton}>
+                <DomainsChooser domains={domains}
+                                selectedDomains={selectedDomains} />
+              </span>
+
+              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                <FormsChooser selectedForms={selectedForms} />
+              </span>
+
+              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                  <StatusChooser selectedStatus={selectedStatus} />
+              </span>
+
+              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                <DifficultyChooser {...difficulty} />
+              </span>
+
+              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                <EqualityChooser selectedEquality={equality} />
+              </span>
+
+              <span id='problem-filter'
+                    className='btn-group'
+                    style={objectAssign({width: 100}, Style.sidebarButton)}>
+                <ProblemFilter contents={filter} />
+              </span>
+            </ButtonToolbar>
+          </Col>
+        </Row>
+
+        <Row style={{marginTop: 20}}>
           <Col md={2}>
-
-            <ProblemSetChooser problemSet={problemSet}
-                               problemSetNames={problemSetNames}
-                               style={Style.sidebarButton} />
-
-            <TypeChooser type={type}
-                         hasAxioms={axioms && axioms.length !== 0}
-                         problemSet={problemSet}
-                         style={Style.sidebarButton} />
-
-            <div style={Style.sidebarButton}>
-              <ClassChooser domains={domains}
-                            selectedDomains={selectedDomains} />
-            </div>
-
-            <div style={Style.sidebarButton}>
-              <ProblemTypeChooser selectedTypes={selectedTypes} />
-            </div>
-
-            <div style={Style.sidebarButton}>
-              <StatusChooser selectedStatus={selectedStatus} />
-            </div>
-
-            <ProblemFilter contents={filter}
-                           style={Style.sidebarButton} />
-
             <div style={Style.sidebarButton}>
               <ProblemList problems={display}
                            type={type}
                            selectedDomains={selectedDomains}/>
             </div>
-
           </Col>
-          <Col md={9}>
+
+          <Col md={10}>
             <ProblemDisplay problem={problem}
                             problemSet={problemSet}
                             body={problemBody} />
           </Col>
         </Row>
+
       </Grid>
     );
   }
@@ -212,13 +257,14 @@ class ProblemBrowser extends React.Component {
 
 ProblemBrowser.propTypes = {
   axioms: Types.arrayOf(Types.object),
+  difficulty: Types.object,
   problemBody: Types.string,
   problem: Types.object,
   problems: Types.arrayOf(Types.object),
   problemSet: Types.string,
   problemSetNames: Types.arrayOf(Types.string),
   selectedStatus: Types.arrayOf(Types.string),
-  selectedTypes: Types.arrayOf(Types.string),
+  selectedForms: Types.arrayOf(Types.string),
   type: Types.string,
 };
 
@@ -228,9 +274,9 @@ ProblemBrowser.propTypes = {
  */
 class ProblemSetChooser extends React.Component {
   render() {
-    const { problemSet, problemSetNames, style } = this.props;
+    const { problemSet, problemSetNames } = this.props;
     return (
-        <DropdownButton style={style} title={problemSet}>
+        <DropdownButton title={problemSet}>
           {problemSetNames.map(s =>
             <MenuItemLink key={s} to={`/imogen/problems/${s}`}>
               {s}
@@ -243,7 +289,6 @@ class ProblemSetChooser extends React.Component {
 ProblemSetChooser.propTypes = {
   problemSet: Types.string.isRequired,
   problemSetNames: Types.arrayOf(Types.string).isRequired,
-  style: Types.object,
 };
 
 
@@ -252,11 +297,10 @@ ProblemSetChooser.propTypes = {
  */
 class TypeChooser extends React.Component {
   render() {
-    const { problemSet, type, hasAxioms, style } = this.props;
-    if (!problemSet || !hasAxioms) return null;
+    const { problemSet, type } = this.props;
     const types = ['problems', 'axioms'];
     return (
-      <DropdownButton title={type.capitalize()} style={style}>
+      <DropdownButton title={type.capitalize()}>
         {types.map(t =>
             <MenuItemLink key={t}
                           active={type === t}
@@ -271,33 +315,33 @@ class TypeChooser extends React.Component {
 
 TypeChooser.propTypes = {
   type: Types.string.isRequired,
-  problemSet: Types.string.isRequired,
-  hasAxioms: Types.bool.isRequired,
-  style: Types.object,
+  problemSet: Types.string.isRequired
 };
 
 
 /**
  *
  */
-class ClassChooser extends React.Component {
+class DomainsChooser extends React.Component {
   render() {
     const { domains, selectedDomains } = this.props;
     const disabled = !domains || domains.length === 0;
     const onChange = (_, cs) => problemBrowserReceiveSelectedDomains(cs.map(c => c.label));
     const options = domains.map(c => ({value: c, label: c}));
     return (
-      <Select options={options}
-              disabled={disabled}
-              placeholder='Domains'
-              onChange={onChange}
-              value={selectedDomains}
-              multi={true} />
+      <DropdownButton title='Domains'>
+        <Select options={options}
+                disabled={disabled}
+                placeholder='Any'
+                onChange={onChange}
+                value={selectedDomains}
+                multi={true} />
+      </DropdownButton>
     );
   }
 }
 
-ClassChooser.propTypes = {
+DomainsChooser.propTypes = {
   domains: Types.arrayOf(Types.string).isRequired,
   selectedDomains: Types.arrayOf(Types.string).isRequired,
 };
@@ -306,48 +350,26 @@ ClassChooser.propTypes = {
 /**
  *
  */
-class ProblemFilter extends React.Component {
+class FormsChooser extends React.Component {
   render() {
-    const { contents, style } = this.props;
-    const onChange = () => problemBrowserReceiveFilter(this.refs.input.getValue());
+    const { selectedForms } = this.props;
+    const forms = ['CNF', 'FOF', 'TFA', 'TFF', 'THF'];
+    const options = forms.map(t => ({value: t, label: t}));
+    const onChange = (_, forms) => problemBrowserReceiveSelectedForms(forms.map(t => t.label));
     return (
-      <Input type='text'
-             style={style}
-             value={contents}
-             placeholder='Filter'
-             ref='input'
-             onChange={onChange} />
+      <DropdownButton title='Forms'>
+        <Select options={options}
+                placeholder='Any'
+                onChange={onChange}
+                value={selectedForms}
+                multi={true} />
+      </DropdownButton>
     );
   }
 }
 
-ProblemFilter.propTypes = {
-  contents: Types.string.isRequired,
-  style: Types.object,
-};
-
-
-/**
- *
- */
-class ProblemTypeChooser extends React.Component {
-  render() {
-    const { selectedTypes } = this.props;
-    const types = ['CNF', 'FOF', 'TFA', 'TFF', 'THF'];
-    const options = types.map(t => ({value: t, label: t}));
-    const onChange = (_, types) => problemBrowserReceiveSelectedTypes(types.map(t => t.label));
-    return (
-      <Select options={options}
-              placeholder='Types'
-              onChange={onChange}
-              value={selectedTypes}
-              multi={true} />
-    );
-  }
-}
-
-ProblemTypeChooser.propTypes = {
-  selectedTypes: Types.arrayOf(Types.string).isRequired
+FormsChooser.propTypes = {
+  selectedForms: Types.arrayOf(Types.string).isRequired,
 };
 
 
@@ -367,18 +389,105 @@ class StatusChooser extends React.Component {
     ];
     const onChange = (_, status) => problemBrowserReceiveSelectedStatus(status.map(s => s.value));
     return (
-      <Select options={options}
-              placeholder='Status'
-              onChange={onChange}
-              value={selectedStatus}
-              multi={true} />
+      <DropdownButton title='Status'>
+        <Select options={options}
+                placeholder='Any'
+                onChange={onChange}
+                value={selectedStatus}
+                multi={true} />
+      </DropdownButton>
     );
   }
 }
 
 StatusChooser.propTypes = {
-  selectedStatus: Types.arrayOf(Types.string).isRequired
+  selectedStatus: Types.arrayOf(Types.string).isRequired,
+
 };
+
+
+/**
+ *
+ */
+class DifficultyChooser extends React.Component {
+  render() {
+    const { lower, upper } = this.props;
+    const onChange = () => problemBrowserReceiveDifficulty({
+        lower: this.refs.lower.getValue(),
+        upper: this.refs.upper.getValue()
+    });
+    return (
+      <DropdownButton title='Difficulty'>
+        <Input type='text'
+               addonBefore='Lower'
+               value={lower}
+               ref='lower'
+               onChange={onChange}/>
+        <Input type='text'
+               addonBefore='Upper'
+               value={upper}
+               ref='upper'
+               onChange={onChange}/>
+      </DropdownButton>
+    );
+  }
+}
+
+DifficultyChooser.propTypes = {
+  lower: Types.string.isRequired,
+  upper: Types.string.isRequired,
+};
+
+/**
+ *
+ */
+class EqualityChooser extends React.Component {
+  render() {
+    const { selectedEquality } = this.props;
+    const options = [
+      {value: 'Some', label: 'Some'},
+      {value: 'None', label: 'None'},
+    ];
+    const onChange = s => problemBrowserReceiveEquality(s);
+    return (
+      <DropdownButton title='Equality'>
+        <Select options={options}
+                placeholder='Any'
+                onChange={onChange}
+                value={selectedEquality}
+                multi={false} />
+      </DropdownButton>
+    );
+  }
+}
+
+EqualityChooser.propTypes = {
+  selectedEquality: Types.string,
+};
+
+
+/**
+ *
+ */
+class ProblemFilter extends React.Component {
+  render() {
+    const { contents } = this.props;
+    const onChange = () => problemBrowserReceiveFilter(this.refs.input.getValue());
+    return (
+      <Input type='text'
+             value={contents}
+             placeholder='Filter'
+             ref='input'
+             onChange={onChange} />
+    );
+  }
+}
+
+ProblemFilter.propTypes = {
+  contents: Types.string.isRequired,
+  style: Types.object,
+};
+
 
 /**
  *
@@ -400,7 +509,7 @@ class ProblemList extends React.Component {
              width={Style.sidebarWidth}
              maxHeight={500}
              headerHeight={30}>
-        <Column label={`${type}: ${count}`}
+        <Column label={`${type.capitalize()}: ${count}`}
                 cellRenderer={cellRenderer}
                 align='left'
                 width={Style.sidebarWidth}

@@ -50,14 +50,24 @@ module.exports = {
     filter,
   }),
 
-  problemBrowserReceiveSelectedTypes: types => Dispatcher.dispatch({
-    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_TYPES,
-    types,
+  problemBrowserReceiveSelectedForms: forms => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_FORMS,
+    forms,
   }),
 
   problemBrowserReceiveSelectedStatus: status => Dispatcher.dispatch({
     type: ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_STATUS,
     status,
+  }),
+
+  problemBrowserReceiveDifficulty: difficulty => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_DIFFICULTY,
+    difficulty,
+  }),
+
+  problemBrowserReceiveEquality: equality => Dispatcher.dispatch({
+    type: ActionTypes.PROBLEM_BROWSER_RECEIVE_EQUALITY,
+    equality,
   }),
 
 };

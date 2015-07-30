@@ -1,14 +1,38 @@
 .Select-item {
   color: black;
+  background-color: white;
   border-color: white white white white;
 }
 
 .Select-item-label {
+  color: black;
   background-color: white;
   border-color: white white white white;
 }
 
 .Select-item-icon {
-  background-color: white;
-  border-color: white white white white;
+  display: none;
+  /*color: black;*/
+  /*background-color: white;*/
+  /*border-color: white white white white;*/
+}
+
+.Select-control {
+}
+
+.btn-group button {
+  font-size: 16px;
+  text-align: left;
+}
+
+.btn-group {
+  min-height: 36px;
+}
+
+.form-control {
+  min-height: 36px;
+}
+
+#problem-filter .form-group {
+  margin-bottom: 0;
 }
