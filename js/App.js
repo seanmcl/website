@@ -9,6 +9,7 @@ import Quotes from './components/Quotes';
 import Thesis from './components/Thesis';
 import Navbar from './components/SiteNavbar';
 import ProblemBrowser from './components/ProblemBrowser';
+import ProblemStats from './components/ProblemStats';
 
 require('bootstrap-webpack');
 require('../css/default.css');
@@ -27,6 +28,7 @@ const routes =
       <Route path='blog' handler={Blog}/>
       <Route path='blog/:basename' handler={Blog}/>
       <Route path='imogen' handler={Imogen}/>
+      <Route path='imogen/problem-stats' handler={ProblemStats}/>
       <Route path='imogen/problems' handler={ProblemBrowser}/>
       <Route path='imogen/problems/:problemSet' handler={ProblemBrowser}/>
       <Route path='imogen/problems/:problemSet/:type'

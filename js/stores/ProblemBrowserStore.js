@@ -42,7 +42,6 @@ const Problem = (problemSetName, problemSetDir) => p => (() => {
   const size = () => p.size;
   const route = () => _route;
   const matches = rex => _problemName.match(rex);
-  const stats = () => p.stats;
   const type = () => {
     switch (name()[6]) {
       case '-': return 'CNF';
@@ -53,10 +52,66 @@ const Problem = (problemSetName, problemSetDir) => p => (() => {
       default: throw `Unknown type: ${name()}}`;
     }
   };
-  const status = () => p.stats && p.stats.length >= 2 ? p.stats[2] : null;
+  // stats[0] is problem name
+  const stats = () => p.stats;
+  const version = () => p.stats ? p.stats[1] : null;
+  const status = () => p.stats ? p.stats[2] : null;
   const difficulty = () => p.stats ? p.stats[3] : null;
-  const hasEquality = () => p.stats ? p.stats[11] : null;
-  return {file, difficulty, hasEquality, name, size, route, matches, stats, type, status};
+  const numFormulas = () => p.stats ? p.stats[4] : null;
+  const numNonHornClauses = () => p.stats ? p.stats[5] : null;
+  const numUnitClauses = () => p.stats ? p.stats[6] : null;
+  // 7 is num type definitions
+  // 8 is num definitions
+  // 9 is num range restricted clauses
+  const numAtoms = () => p.stats ? p.stats[10] : null;
+  const numEqualityAtoms = () => p.stats ? p.stats[11] : null;
+  // 12 is num variable atoms
+  // 13 is max formula depth
+  // 14 is avg formula depth
+  const numPredSyms = () => p.stats ? p.stats[15] : null;
+  const numPropSyms = () => p.stats ? p.stats[16] : null;
+  // 17 is predicate arity range
+  const numConnectives = () => p.stats ? p.stats[18] : null;
+  // 19 is num type connectives
+  const numVariables = () => p.stats ? p.stats[20] : null;
+  // 21 is num singleton vars
+  // 22 is num polymorphic types
+  const numUniversal = () => p.stats ? p.stats[23] : null;
+  const numExistential = () => p.stats ? p.stats[24] : null;
+  // 25 is num lambda exprs
+  // 26 max term depth
+  // 27 avg term depth
+  const numFuncSyms = () => p.stats ? p.stats[28] : null;
+  const numConstantSyms = () => p.stats ? p.stats[29] : null;
+  // 30 is func arity range
+  // 31 is num arith syms
+  const hasEquality = () => numEqualityAtoms() > 0;
+  return {
+    difficulty,
+    file,
+    hasEquality,
+    matches,
+    name,
+    numEqualityAtoms,
+    numFormulas,
+    numNonHornClauses,
+    numUnitClauses,
+    numAtoms,
+    numPredSyms,
+    numPropSyms,
+    numConnectives,
+    numVariables,
+    numUniversal,
+    numExistential,
+    numFuncSyms,
+    numConstantSyms,
+    route,
+    size,
+    stats,
+    status,
+    type,
+    version,
+  };
 })();
 
 
@@ -119,14 +174,8 @@ const Index = sets => (() => {
  *
  */
 let _state = {
-  difficulty: {lower: '0.0', upper: '1.0'},
   index: Index([]),
   files: {},
-  selectedDomains: [],
-  filter: '',
-  selectedForms: [],
-  selectedStatus: [],
-  equality: null,
 };
 
 const Store = assign({}, EventEmitter.prototype, {
@@ -158,42 +207,6 @@ Store.dispatchToken = Dispatcher.register(action => {
     case ActionTypes.PROBLEM_BROWSER_RECEIVE_FILE:
       console.log(`Received file: ${action.name}`);
       _state.files[action.name] = action.file;
-      Store.emitChange();
-      break;
-
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_DOMAINS:
-      console.log(`Received domains: ${action.domains}`);
-      _state.selectedDomains = action.domains.sort();
-      Store.emitChange();
-      break;
-
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_FILTER:
-      console.log(`Received filter: ${action.filter}`);
-      _state.filter = action.filter;
-      Store.emitChange();
-      break;
-
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_FORMS:
-      console.log(`Received forms: ${action.forms}`);
-      _state.selectedForms = action.forms.sort();
-      Store.emitChange();
-      break;
-
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_SELECTED_STATUS:
-      console.log(`Received status: ${action.status}`);
-      _state.selectedStatus = action.status.sort();
-      Store.emitChange();
-      break;
-
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_DIFFICULTY:
-      console.log(`Received difficulty: ${action.difficulty}`);
-      _state.difficulty = action.difficulty;
-      Store.emitChange();
-      break;
-
-    case ActionTypes.PROBLEM_BROWSER_RECEIVE_EQUALITY:
-      console.log(`Received equality: ${action.equality}`);
-      _state.equality = action.equality;
       Store.emitChange();
       break;
 

@@ -18,13 +18,7 @@ import { PROBLEM_MAX_SIZE,
          getProblemBrowserFile } from '../Util';
 import { PropTypes as Types } from 'react';
 import Select from 'react-select';
-import { problemBrowserReceiveSelectedDomains,
-         problemBrowserReceiveFilter,
-         problemBrowserReceiveDifficulty,
-         problemBrowserReceiveEquality,
-         problemBrowserReceiveSelectedForms,
-         problemBrowserReceiveSelectedStatus } from '../SiteActionCreators';
-import objectAssign from 'object-assign';
+import keymirror from 'keymirror';
 
 require('../../node_modules/highlight.js/styles/idea.css');
 require('../../node_modules/fixed-data-table/dist/fixed-data-table.css');
@@ -33,8 +27,13 @@ require('../../css/default.css');
 require('../../css/ProblemBrowser.css');
 
 const MAX_PROBLEMS = 30;
+const SELECT_DELIMITER = '-';
 const getStateFromStore = () => Store.get();
 const buttonToolbarStyle = {marginRight: 20};
+
+/**
+ *
+ */
 const Style = (() => {
   const sidebarWidth = 160;
   return {
@@ -45,12 +44,49 @@ const Style = (() => {
     sidebarButton: {
       float: 'left',
       marginRight: 20,
-      //width: sidebarWidth,
-      //minWidth: sidebarWidth,
-      //marginBottom: 20,
     }
   }
 })();
+
+const QueryKeys = keymirror({
+  domains: null,
+  equality: null,
+  filter: null,
+  forms: null,
+  minDifficulty: null,
+  maxDifficulty: null,
+  order: null,
+  status: null,
+});
+
+/**
+ *
+ */
+const Router = router => (() => {
+  const _route = router.getCurrentPathname();
+  const _params = router.getCurrentParams();
+  const _query = router.getCurrentQuery();
+  const extendAndTransition = (key, value) => {
+    const v = value.length > 0 ? value : undefined;
+    const newQuery = R.merge(_query, {[key]: v});
+    router.transitionTo(_route, _params, newQuery);
+  };
+  const hasQueryParam = key => key in _query;
+  const getQueryParam = key => _query[key];
+  const getQueryParamList = key => {
+    const v = getQueryParam(key);
+    return v ? v.split(SELECT_DELIMITER) : [];
+  };
+  const queryObject = () => _query;
+  return {
+    extendAndTransition,
+    getQueryParam,
+    getQueryParamList,
+    queryObject,
+    hasQueryParam
+  };
+})();
+
 
 /**
  *
@@ -100,16 +136,7 @@ export default class ProblemBrowserContainer extends React.Component {
 
   render() {
     let { problemSet, type, name } = this.props.params;
-    const { index, files, selectedDomains, filter, selectedForms,
-            selectedStatus, difficulty, equality } = this.state;
-    let { lower, upper } = difficulty;
-    lower = lower ? lower : '0.0';
-    upper = upper ? upper : '1.0';
-    let lowerFloat = parseFloat(lower);
-    let upperFloat = parseFloat(upper);
-    const epsilon = 0.0001;
-    lowerFloat = isNaN(lowerFloat) ? 0.0 : lowerFloat - epsilon;
-    upperFloat = isNaN(lowerFloat) ? 1.0 : upperFloat + epsilon;
+    const { index, files } = this.state;
 
     const problemSetNames = index.problemSetNames();
     const defaultProblemSet = () => {
@@ -118,7 +145,25 @@ export default class ProblemBrowserContainer extends React.Component {
     };
     problemSet = problemSet || defaultProblemSet();
 
-    const filterRegexp = new RegExp(filter, 'i');
+    const router = Router(this.context.router);
+    const selectedDomains = router.getQueryParamList(QueryKeys.domains);
+    const selectedStatus = router.getQueryParamList(QueryKeys.status);
+    const selectedForms = router.getQueryParamList(QueryKeys.forms);
+    const currentFilter = router.getQueryParam(QueryKeys.filter);
+    const equality = router.getQueryParam(QueryKeys.equality);
+    const order = router.getQueryParam(QueryKeys.order);
+    const filterRegexp = new RegExp(currentFilter, 'i');
+
+    let minDifficulty = router.getQueryParam(QueryKeys.minDifficulty);
+    minDifficulty = minDifficulty ? minDifficulty : '0.0';
+    let maxDifficulty = router.getQueryParam(QueryKeys.maxDifficulty);
+    maxDifficulty = maxDifficulty ? maxDifficulty : '1.0';
+    minDifficulty = parseFloat(minDifficulty);
+    maxDifficulty = parseFloat(maxDifficulty);
+    const epsilon = 0.0001;
+    minDifficulty = isNaN(minDifficulty) ? 0.0 : minDifficulty - epsilon;
+    maxDifficulty = isNaN(maxDifficulty) ? 1.0 : maxDifficulty + epsilon;
+
     const problemFilter = p =>
       p.name().match(filterRegexp)
       && (selectedDomains.length === 0
@@ -134,11 +179,16 @@ export default class ProblemBrowserContainer extends React.Component {
       && (problemSet != 'TPTP'
           || !p.difficulty
           || !$.isNumeric(p.difficulty())
-          || (lowerFloat <= p.difficulty() && p.difficulty() <= upperFloat))
+          || (minDifficulty <= p.difficulty() && p.difficulty() <= maxDifficulty))
       && (!equality
           || !p.hasEquality
           || (equality === 'Some' && p.hasEquality())
-          || (equality === 'None' && !p.hasEquality()));
+          || (equality === 'None' && !p.hasEquality()))
+      && (!order
+          || !p.numPropSyms
+          || !p.numPredSyms
+          || (order === 'Propositional' && p.numPropSyms() === p.numPredSyms())
+          || (order === 'FirstOrder' && p.numPropSyms() !== p.numPredSyms()));
 
     const pset = index.getProblemSet(problemSet);
     const domains = pset ? pset.domains() : [];
@@ -166,17 +216,15 @@ export default class ProblemBrowserContainer extends React.Component {
                       problemSet={problemSet}
                       problemSetNames={problemSetNames}
                       problemBody={body}
-                      domains={domains}
-                      selectedDomains={selectedDomains}
-                      filter={filter}
-                      selectedForms={selectedForms}
-                      selectedStatus={selectedStatus}
-                      difficulty={difficulty}
-                      equality={equality}
-        />
+                      domains={domains} />
     );
   }
 }
+
+ProblemBrowserContainer.contextTypes = {
+  router: Types.func.isRequired
+};
+
 
 /**
  *
@@ -184,8 +232,7 @@ export default class ProblemBrowserContainer extends React.Component {
 class ProblemBrowser extends React.Component {
   render() {
     const { axioms, problemBody, problem, problems, problemSet,
-            problemSetNames, type, domains, selectedDomains, filter,
-            selectedForms, selectedStatus, difficulty, equality } = this.props;
+            problemSetNames, type, domains } = this.props;
     const display = type === 'axioms' ? axioms : problems;
     const isTptp = problemSet == 'TPTP';
     const hasAxioms = axioms && axioms.length !== 0;
@@ -199,36 +246,39 @@ class ProblemBrowser extends React.Component {
                                    problemSetNames={problemSetNames} />
               </span>
 
-              <span style={objectAssign({display: hasAxioms ? null : 'none'}, Style.sidebarButton)}>
+              <span style={R.merge({display: hasAxioms ? null : 'none'}, Style.sidebarButton)}>
                 <TypeChooser type={type}
                              problemSet={problemSet} />
               </span>
 
               <span style={Style.sidebarButton}>
-                <DomainsChooser domains={domains}
-                                selectedDomains={selectedDomains} />
+                <DomainsChooser domains={domains} />
               </span>
 
-              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                <FormsChooser selectedForms={selectedForms} />
+              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                <FormsChooser />
               </span>
 
-              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                  <StatusChooser selectedStatus={selectedStatus} />
+              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                  <StatusChooser />
               </span>
 
-              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                <DifficultyChooser {...difficulty} />
+              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                <DifficultyChooser />
               </span>
 
-              <span style={objectAssign({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
-                <EqualityChooser selectedEquality={equality} />
+              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                <EqualityChooser />
+              </span>
+
+              <span style={R.merge({display: isTptp ? null : 'none'}, Style.sidebarButton)}>
+                <OrderChooser />
               </span>
 
               <span id='problem-filter'
                     className='btn-group'
-                    style={objectAssign({width: 100}, Style.sidebarButton)}>
-                <ProblemFilter contents={filter} />
+                    style={R.merge({width: 100}, Style.sidebarButton)}>
+                <ProblemFilter />
               </span>
             </ButtonToolbar>
           </Col>
@@ -238,8 +288,7 @@ class ProblemBrowser extends React.Component {
           <Col md={2}>
             <div style={Style.sidebarButton}>
               <ProblemList problems={display}
-                           type={type}
-                           selectedDomains={selectedDomains}/>
+                           type={type} />
             </div>
           </Col>
 
@@ -319,22 +368,26 @@ TypeChooser.propTypes = {
 };
 
 
+
 /**
  *
  */
 class DomainsChooser extends React.Component {
   render() {
-    const { domains, selectedDomains } = this.props;
-    const disabled = !domains || domains.length === 0;
-    const onChange = (_, cs) => problemBrowserReceiveSelectedDomains(cs.map(c => c.label));
+    const { domains } = this.props;
+    const router = Router(this.context.router);
+    const selectedDomains = router.getQueryParamList(QueryKeys.domains);
+    const onChange = (_, ds) => {
+      router.extendAndTransition(QueryKeys.domains, ds.map(d => d.value).sort().join(SELECT_DELIMITER));
+    };
     const options = domains.map(c => ({value: c, label: c}));
     return (
       <DropdownButton title='Domains'>
         <Select options={options}
-                disabled={disabled}
                 placeholder='Any'
                 onChange={onChange}
                 value={selectedDomains}
+                delimiter={SELECT_DELIMITER}
                 multi={true} />
       </DropdownButton>
     );
@@ -343,7 +396,10 @@ class DomainsChooser extends React.Component {
 
 DomainsChooser.propTypes = {
   domains: Types.arrayOf(Types.string).isRequired,
-  selectedDomains: Types.arrayOf(Types.string).isRequired,
+};
+
+DomainsChooser.contextTypes = {
+  router: Types.func.isRequired
 };
 
 
@@ -352,10 +408,12 @@ DomainsChooser.propTypes = {
  */
 class FormsChooser extends React.Component {
   render() {
-    const { selectedForms } = this.props;
+    const router = Router(this.context.router);
+    const selectedForms = router.getQueryParamList(QueryKeys.forms);
     const forms = ['CNF', 'FOF', 'TFA', 'TFF', 'THF'];
     const options = forms.map(t => ({value: t, label: t}));
-    const onChange = (_, forms) => problemBrowserReceiveSelectedForms(forms.map(t => t.label));
+    const onChange = (_, forms) => router.extendAndTransition(QueryKeys.forms,
+      forms.map(t => t.value).sort().join(SELECT_DELIMITER));
     return (
       <DropdownButton title='Forms'>
         <Select options={options}
@@ -368,8 +426,8 @@ class FormsChooser extends React.Component {
   }
 }
 
-FormsChooser.propTypes = {
-  selectedForms: Types.arrayOf(Types.string).isRequired,
+FormsChooser.contextTypes = {
+  router: Types.func.isRequired
 };
 
 
@@ -378,7 +436,8 @@ FormsChooser.propTypes = {
  */
 class StatusChooser extends React.Component {
   render() {
-    const { selectedStatus } = this.props;
+    const router = Router(this.context.router);
+    const selectedStatus = router.getQueryParamList(QueryKeys.status);
     const options = [
       {value: 'UNS', label: 'Unsatisfiable'},
       {value: 'SAT', label: 'Satisfiable'},
@@ -387,7 +446,8 @@ class StatusChooser extends React.Component {
       {value: 'OPN', label: 'Open'},
       {value: 'CSA', label: 'CounterSatisfiable'}
     ];
-    const onChange = (_, status) => problemBrowserReceiveSelectedStatus(status.map(s => s.value));
+    const onChange = (_, status) => router.extendAndTransition(QueryKeys.status,
+      status.map(s => s.value).sort().join(SELECT_DELIMITER));
     return (
       <DropdownButton title='Status'>
         <Select options={options}
@@ -400,9 +460,8 @@ class StatusChooser extends React.Component {
   }
 }
 
-StatusChooser.propTypes = {
-  selectedStatus: Types.arrayOf(Types.string).isRequired,
-
+StatusChooser.contextTypes = {
+  router: Types.func.isRequired
 };
 
 
@@ -411,44 +470,45 @@ StatusChooser.propTypes = {
  */
 class DifficultyChooser extends React.Component {
   render() {
-    const { lower, upper } = this.props;
-    const onChange = () => problemBrowserReceiveDifficulty({
-        lower: this.refs.lower.getValue(),
-        upper: this.refs.upper.getValue()
-    });
+    const router = Router(this.context.router);
+    const minDifficulty = router.getQueryParam(QueryKeys.minDifficulty);
+    const maxDifficulty = router.getQueryParam(QueryKeys.maxDifficulty);
+    const onChangeMin = () => router.extendAndTransition(QueryKeys.minDifficulty, this.refs.min.getValue());
+    const onChangeMax = () => router.extendAndTransition(QueryKeys.maxDifficulty, this.refs.max.getValue());
     return (
       <DropdownButton title='Difficulty'>
         <Input type='text'
-               addonBefore='Lower'
-               value={lower}
-               ref='lower'
-               onChange={onChange}/>
+               addonBefore='Min'
+               value={minDifficulty}
+               ref='min'
+               onChange={onChangeMin}/>
         <Input type='text'
-               addonBefore='Upper'
-               value={upper}
-               ref='upper'
-               onChange={onChange}/>
+               addonBefore='Max'
+               value={maxDifficulty}
+               ref='max'
+               onChange={onChangeMax}/>
       </DropdownButton>
     );
   }
 }
 
-DifficultyChooser.propTypes = {
-  lower: Types.string.isRequired,
-  upper: Types.string.isRequired,
+DifficultyChooser.contextTypes = {
+  router: Types.func.isRequired
 };
+
 
 /**
  *
  */
 class EqualityChooser extends React.Component {
   render() {
-    const { selectedEquality } = this.props;
+    const router = Router(this.context.router);
+    const selectedEquality = router.getQueryParam(QueryKeys.equality);
     const options = [
       {value: 'Some', label: 'Some'},
       {value: 'None', label: 'None'},
     ];
-    const onChange = s => problemBrowserReceiveEquality(s);
+    const onChange = s => router.extendAndTransition(QueryKeys.equality, s);
     return (
       <DropdownButton title='Equality'>
         <Select options={options}
@@ -461,18 +521,47 @@ class EqualityChooser extends React.Component {
   }
 }
 
-EqualityChooser.propTypes = {
-  selectedEquality: Types.string,
+EqualityChooser.contextTypes = {
+  router: Types.func.isRequired
 };
 
 
 /**
  *
  */
+class OrderChooser extends React.Component {
+  render() {
+    const router = Router(this.context.router);
+    const selectedOrder = router.getQueryParam(QueryKeys.order);
+    const options = [
+      {value: 'Propositional', label: 'Propositional'},
+      {value: 'FirstOrder', label: 'First Order'},
+    ];
+    const onChange = s => router.extendAndTransition(QueryKeys.order, s);
+    return (
+      <DropdownButton title='Order'>
+        <Select options={options}
+                placeholder='Any'
+                onChange={onChange}
+                value={selectedOrder}
+                multi={false} />
+      </DropdownButton>
+    );
+  }
+}
+
+OrderChooser.contextTypes = {
+  router: Types.func.isRequired
+};
+
+/**
+ *
+ */
 class ProblemFilter extends React.Component {
   render() {
-    const { contents } = this.props;
-    const onChange = () => problemBrowserReceiveFilter(this.refs.input.getValue());
+    const router = Router(this.context.router);
+    const contents = router.getQueryParam(QueryKeys.filter) || '';
+    const onChange = () => router.extendAndTransition(QueryKeys.filter, this.refs.input.getValue());
     return (
       <Input type='text'
              value={contents}
@@ -483,9 +572,8 @@ class ProblemFilter extends React.Component {
   }
 }
 
-ProblemFilter.propTypes = {
-  contents: Types.string.isRequired,
-  style: Types.object,
+ProblemFilter.contextTypes = {
+  router: Types.func.isRequired
 };
 
 
@@ -495,12 +583,14 @@ ProblemFilter.propTypes = {
 class ProblemList extends React.Component {
   render() {
     const { problems, type } = this.props;
+    const router = Router(this.context.router);
+    const query = router.queryObject();
     if (!problems) return null;
     const rowGetter = n => [problems[n]];
     const count = problems.length;
     //noinspection JSUnusedLocalSymbols
     const cellRenderer = (cellData, cellDataKey, rowData, rowIndex, columnData, width) => {
-      return <Link to={cellData.route()}>{cellData.name()}</Link>;
+      return <Link to={cellData.route()} query={query}>{cellData.name()}</Link>;
     };
     return (
       <Table rowHeight={30}
@@ -522,6 +612,10 @@ class ProblemList extends React.Component {
 ProblemList.propTypes = {
   type: Types.string,
   problems: Types.arrayOf(Types.object),
+};
+
+ProblemList.contextTypes = {
+  router: Types.func.isRequired
 };
 
 
