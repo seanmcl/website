@@ -25,7 +25,7 @@
     "type": "git",
     "url": "git@github.com:seanmcl/website.git"
   },
-  "author": "EGLP",
+  "author": "seanmcl",
   "license": "MIT",
   "dependencies": {
     "bootstrap": "^3.3.5",
