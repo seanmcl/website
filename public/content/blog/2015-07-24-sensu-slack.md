@@ -19,7 +19,7 @@ Just adding this little file set up our uchiwa frontend.
 The server config is similarly simple
 
     "slack": {
-      "webhook_url": "https://hooks.slack.com/services/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",
+      "webhook_url": "https://hooks.slack.com/services/blahblahblah",
       "username": "sensu",
       "channel": "#sensu",
       "template": "/etc/sensu/conf.d/slack-template.erb",
