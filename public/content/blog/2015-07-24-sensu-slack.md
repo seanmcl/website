@@ -12,7 +12,7 @@ Just adding this little file set up our uchiwa frontend.
       [@event["check"]["output"],
        @event["client"]["address"],
        @event["client"]["subscriptions"].join(","),
-       "<http://sensu.eglp.com/#/client/Core/#{@event["client"]["name"]}?check=#{@event["check"]["name"]}|Uchiwa>"
+       "<http://sensu.blah.com/#/client/Core/#{@event["client"]["name"]}?check=#{@event["check"]["name"]}|Uchiwa>"
        ].join(" : ")
     %>
 
